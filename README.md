@@ -10,7 +10,11 @@
 
 ## What it does
 
-<video width="128" height="128" src="https://github.com/user-attachments/assets/d58cea40-964b-41ff-9caf-a72987d50c86" autoplay loop muted></video>
+
+
+
+
+<video width="128" height="128" src="https://github.com/user-attachments/assets/25095a11-a784-4c42-9924-0dc699b136b0" autoplay loop muted></video>
 
 * **Quick Toss**: Save URLs or text from anywhere with a simple share action
 * **Cross-platform**: Toss on your iPhone, organize on your MacBook (or vice versa)
