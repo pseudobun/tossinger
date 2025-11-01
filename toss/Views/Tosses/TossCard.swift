@@ -14,6 +14,7 @@ struct TossCard: View {
     @Environment(\.modelContext) private var modelContext
     @State private var isHovered = false
     @State private var hasAttemptedLoad = false
+    @State private var isLoadingImage = false
 
     var body: some View {
         if toss.type == .link {
@@ -22,7 +23,7 @@ struct TossCard: View {
                 Color.clear
                     .aspectRatio(4 / 3, contentMode: .fit)
                     .overlay {
-                        if hasAttemptedLoad && toss.imageData == nil {
+                        if isLoadingImage {
                             // Loading spinner
                             ProgressView()
                                 .scaleEffect(1)
@@ -199,14 +200,19 @@ struct TossCard: View {
     private func fetchImageIfNeeded() {
         guard toss.type == .link,
             toss.imageData == nil,
+            !hasAttemptedLoad,
             let url = URL(string: toss.content)
         else {
             return
         }
 
         hasAttemptedLoad = true
+        isLoadingImage = true
 
-        WebsiteMetadataFetcher.fetchOGImage(url: url) { image in
+        // Use the new method with screenshot fallback
+        WebsiteMetadataFetcher.fetchImageOrScreenshot(url: url) { image in
+            isLoadingImage = false
+
             #if os(macOS)
                 if let imageData = image?.tiffRepresentation {
                     toss.imageData = imageData
