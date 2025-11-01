@@ -64,6 +64,7 @@ struct TossesView: View {
                                 }
                             #endif
                     }
+
                 }
                 .padding()
             }
