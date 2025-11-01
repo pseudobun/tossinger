@@ -51,7 +51,7 @@
                         }
                     }
                 } else {
-                    Text("Click to start typing...")
+                    Text("Add a quick toss...")
                         .font(.body)
                         .foregroundStyle(.secondary)
                         .frame(

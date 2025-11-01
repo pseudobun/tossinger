@@ -80,7 +80,15 @@ struct TossesView: View {
 
             .navigationTitle("Tosses")
             .toolbar {
-                #if os(iOS)
+                #if os(macOS)
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            showingAddToss = true
+                        } label: {
+                            Label("New Toss", systemImage: "plus")
+                        }
+                    }
+                #else
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
                             showingAddToss = true
@@ -99,6 +107,16 @@ struct TossesView: View {
                 }
             #endif
             #if os(macOS)
+                .sheet(isPresented: $showingAddToss) {
+                    AddTossView()
+                    .frame(
+                        minWidth: 700,
+                        idealWidth: 800,
+                        minHeight: 400,
+                        idealHeight: 500,
+                        maxHeight: 600
+                    )
+                }
                 .sheet(item: $selectedToss) { toss in
                     TossDetailView(toss: toss)
                     .frame(
