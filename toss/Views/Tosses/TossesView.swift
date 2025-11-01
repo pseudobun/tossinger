@@ -38,10 +38,15 @@ struct TossesView: View {
                 LazyVGrid(columns: columns, spacing: spacing) {
                     #if os(macOS)
                         AddTossCard(isEditing: $isAddingToss)
+                            .zIndex(1)  // Ensure it's above other cards
+                            .onTapGesture {
+                                // Prevent tap from propagating to cards below
+                            }
                     #endif
 
                     ForEach(tosses) { toss in
                         TossCard(toss: toss)
+                            .zIndex(0)  // Regular cards below
                             .contextMenu {
                                 Button(role: .destructive) {
                                     deleteToss(toss)
