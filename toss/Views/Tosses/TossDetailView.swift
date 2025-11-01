@@ -1,19 +1,14 @@
-//
-//  TossDetailView.swift
-//  toss
-//
-//  Created by Urban Vidovič on 8. 10. 25.
-//
-
 #if os(macOS)
     import SwiftUI
     import SwiftData
+    import MarkdownUI
 
     struct TossDetailView: View {
         let toss: Toss
         @Environment(\.dismiss) private var dismiss
         @Environment(\.modelContext) private var modelContext
         @State private var editedContent = ""
+        @State private var isPreviewMode = false
         @FocusState private var isFocused: Bool
 
         var body: some View {
@@ -29,31 +24,63 @@
                         .padding()
                 }
 
-                ScrollView {
+                if isPreviewMode {
+                    // Preview mode - rendered markdown
+                    ScrollView {
+                        Markdown(editedContent)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                    }
+                    .scrollIndicators(.hidden)
+                    .frame(maxHeight: .infinity)
+                } else {
+                    // Edit mode - text editor in its own container
                     TextEditor(text: $editedContent)
-                        .font(.body)
+                        .font(.system(.body, design: .monospaced))
                         .focused($isFocused)
                         .scrollContentBackground(.hidden)
-                        .scrollDisabled(true)
                         .padding()
-                        .frame(minHeight: 300)
                         .focusable()
-                        .onKeyPress { press in
-                            if press.key == .return
-                                && press.modifiers.contains(.command)
-                            {
-                                saveAndClose()
-                                return .handled
-                            }
-                            return .ignored
-                        }
+                        .frame(maxHeight: .infinity)
                 }
-                .scrollIndicators(.hidden)
             }
             .background(Color(NSColor.windowBackgroundColor))
+            .toolbar {
+                ToolbarItem(placement: .automatic) {
+                    Toggle(isOn: $isPreviewMode) {
+                        Label(
+                            "Preview",
+                            systemImage: isPreviewMode ? "eye.fill" : "eye"
+                        )
+                    }
+                    .toggleStyle(.button)
+                    .buttonStyle(.borderless)
+                    .help("Toggle markdown preview")
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        saveAndClose()
+                    } label: {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .frame(width: 28, height: 28)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .keyboardShortcut(.return, modifiers: .command)
+                }
+            }
             .onAppear {
                 editedContent = toss.content
                 isFocused = true
+            }
+            .onKeyPress { press in
+                if press.key == .escape {
+                    saveAndClose()
+                    return .handled
+                }
+                return .ignored
             }
         }
 

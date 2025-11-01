@@ -100,9 +100,16 @@ struct TossesView: View {
             #if os(macOS)
                 .sheet(item: $selectedToss) { toss in
                     TossDetailView(toss: toss)
-                    .frame(minWidth: 500, minHeight: 400)
+                    .frame(
+                        minWidth: 700,
+                        idealWidth: 800,
+                        minHeight: 400,
+                        idealHeight: 500,
+                        maxHeight: 600
+                    )
                 }
             #endif
+
         }
     }
 
