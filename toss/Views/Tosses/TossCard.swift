@@ -75,12 +75,14 @@ struct TossCard: View {
             // Text card - same aspect ratio
             Color.clear
                 .aspectRatio(4 / 3, contentMode: .fit)
-                .overlay {
+                .overlay(alignment: .topLeading) {
                     VStack(alignment: .leading, spacing: 8) {
                         Markdown(toss.content)
                             .lineLimit(4)
+                            .truncationMode(.tail)
+                            .multilineTextAlignment(.leading)
 
-                        Spacer()
+                        Spacer(minLength: 0)
 
                         HStack {
                             Image(systemName: "doc.text")
