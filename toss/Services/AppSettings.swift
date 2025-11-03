@@ -10,5 +10,5 @@ import SwiftUI
 
 @MainActor
 class AppSettings: ObservableObject {
-    @AppStorage("biometric_enabled") var isBiometricEnabled: Bool = false
+  @AppStorage("biometric_enabled") var isBiometricEnabled: Bool = false
 }

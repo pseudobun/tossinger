@@ -9,165 +9,169 @@ import SwiftData
 import SwiftUI
 
 #if os(macOS)
-    import AppKit
+  import AppKit
 #else
-    import UIKit
+  import UIKit
 #endif
 
 struct TossesView: View {
-    @Query(sort: \Toss.createdAt, order: .reverse) private var tosses: [Toss]
-    @Environment(\.modelContext) private var modelContext
-    @State private var showingAddToss = false
-    @State private var editingToss: Toss?
-    @State private var selectedToss: Toss?
-    @State private var isAddingToss: Bool = false
+  @Query(sort: \Toss.createdAt, order: .reverse) private var tosses: [Toss]
+  @Environment(\.modelContext) private var modelContext
+  @State private var showingAddToss = false
+  @State private var editingToss: Toss?
+  @State private var selectedToss: Toss?
+  @State private var isAddingToss: Bool = false
 
+  private var columns: [GridItem] {
     #if os(macOS)
-        private let columns = [
-            GridItem(.adaptive(minimum: 180, maximum: 280), spacing: 16)
-        ]
+      [GridItem(.adaptive(minimum: 200, maximum: 300), spacing: spacing)]
     #else
-        private let columns = [
-            GridItem(.adaptive(minimum: 150, maximum: 250), spacing: 12)
-        ]
+      [GridItem(.flexible(), spacing: spacing), GridItem(.flexible(), spacing: spacing)]
     #endif
+  }
 
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                LazyVGrid(columns: columns, spacing: spacing) {
-                    #if os(macOS)
-                        AddTossCard(isEditing: $isAddingToss)
-                            .zIndex(1)  // Ensure it's above other cards
-                            .onTapGesture {
-                                // Prevent tap from propagating to cards below
-                            }
-                    #endif
+  var body: some View {
+    NavigationStack {
+      ScrollView(showsIndicators: false) {
+        LazyVGrid(columns: columns, spacing: spacing) {
+          #if os(macOS)
+            AddTossCard(isEditing: $isAddingToss)
+              .onTapGesture {
+                // Prevent tap from propagating
+              }
+          #endif
 
-                    ForEach(tosses) { toss in
-                        TossCard(toss: toss)
-                            .zIndex(0)  // Regular cards below
-                            .contextMenu {
-                                Button(role: .destructive) {
-                                    deleteToss(toss)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                            #if os(macOS)
-                                .onTapGesture {
-                                    handleTossTap(toss)
-                                }
-                            #else
-                                .onTapGesture {
-                                    handleTossTap(toss)
-                                }
-                            #endif
-                    }
+          ForEach(tosses) { toss in
+            TossCard(toss: toss)
+              .contextMenu {
+                Button {
+                  copyToClipboard(toss.content)
+                } label: {
+                  Label("Copy", systemImage: "doc.on.doc")
+                }
 
+                Button(role: .destructive) {
+                  deleteToss(toss)
+                } label: {
+                  Label("Delete", systemImage: "trash")
                 }
-                .padding()
-            }
-            #if os(iOS)
-                .background(Color(UIColor.systemBackground))
-                .navigationBarTitleDisplayMode(.inline)
-            #else
-                .background(.background)
-            #endif
-            .onTapGesture {
-                isAddingToss = false
-            }
-
-            .navigationTitle("Tosses")
-            .toolbar {
-                #if os(macOS)
-                    ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            showingAddToss = true
-                        } label: {
-                            Label("New Toss", systemImage: "plus")
-                        }
-                    }
-                #else
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            showingAddToss = true
-                        } label: {
-                            Label("New Toss", systemImage: "plus")
-                        }
-                    }
-                #endif
-            }
-            #if os(iOS)
-                .sheet(isPresented: $showingAddToss) {
-                    AddTossView()
-                }
-                .sheet(item: $editingToss) { toss in
-                    EditTossView(toss: toss)
-                }
-            #endif
-            #if os(macOS)
-                .sheet(isPresented: $showingAddToss) {
-                    AddTossView()
-                    .frame(
-                        minWidth: 700,
-                        idealWidth: 800,
-                        minHeight: 400,
-                        idealHeight: 500,
-                        maxHeight: 600
-                    )
-                }
-                .sheet(item: $selectedToss) { toss in
-                    TossDetailView(toss: toss)
-                    .frame(
-                        minWidth: 700,
-                        idealWidth: 800,
-                        minHeight: 400,
-                        idealHeight: 500,
-                        maxHeight: 600
-                    )
-                }
-            #endif
-
+              }
+              .onTapGesture {
+                handleTossTap(toss)
+              }
+          }
         }
-    }
-
-    private func deleteToss(_ toss: Toss) {
-        withAnimation {
-            modelContext.delete(toss)
-            try? modelContext.save()
-        }
-    }
-
-    private func handleTossTap(_ toss: Toss) {
-        // If the toss is a link, try to open it in the default browser
-        if toss.type == .link, let url = URL(string: toss.content) {
-            #if os(macOS)
-                NSWorkspace.shared.open(url)
-            #else
-                if UIApplication.shared.canOpenURL(url) {
-                    UIApplication.shared.open(url)
-                } else {
-                    // If URL is not valid, show edit view
-                    editingToss = toss
-                }
-            #endif
-        } else {
-            // If it's not a valid link, show the edit/detail view as before
-            #if os(macOS)
-                selectedToss = toss
-                isAddingToss = false
-            #else
-                editingToss = toss
-            #endif
-        }
-    }
-
-    private var spacing: CGFloat {
+        .padding()
+      }
+      .scrollIndicators(.hidden, axes: [.vertical, .horizontal])
+      .onTapGesture {
+        isAddingToss = false
+      }
+      #if os(iOS)
+        .background(Color(UIColor.systemBackground))
+        .navigationBarTitleDisplayMode(.inline)
+      #else
+        .background(.background)
+      #endif
+      .navigationTitle("Tosses")
+      .toolbar {
         #if os(macOS)
-            16
+          ToolbarItem(placement: .primaryAction) {
+            Button {
+              showingAddToss = true
+            } label: {
+              Label("New Toss", systemImage: "plus")
+            }
+          }
         #else
-            12
+          ToolbarItem(placement: .topBarTrailing) {
+            Button {
+              showingAddToss = true
+            } label: {
+              Label("New Toss", systemImage: "plus")
+            }
+          }
         #endif
+      }
+      #if os(iOS)
+        .sheet(isPresented: $showingAddToss) {
+          AddTossView()
+        }
+        .sheet(item: $editingToss) { toss in
+          EditTossView(toss: toss)
+        }
+      #endif
+      #if os(macOS)
+        .sheet(isPresented: $showingAddToss) {
+          AddTossView()
+          .frame(
+            minWidth: 700,
+            idealWidth: 800,
+            minHeight: 400,
+            idealHeight: 500,
+            maxHeight: 600
+          )
+        }
+        .sheet(item: $selectedToss) { toss in
+          TossDetailView(toss: toss)
+          .frame(
+            minWidth: 700,
+            idealWidth: 800,
+            minHeight: 400,
+            idealHeight: 500,
+            maxHeight: 600
+          )
+        }
+      #endif
+
     }
+  }
+
+  private func deleteToss(_ toss: Toss) {
+    withAnimation {
+      modelContext.delete(toss)
+      try? modelContext.save()
+    }
+  }
+
+  private func copyToClipboard(_ text: String) {
+    #if os(macOS)
+      NSPasteboard.general.clearContents()
+      NSPasteboard.general.setString(text, forType: .string)
+    #else
+      UIPasteboard.general.string = text
+    #endif
+  }
+
+  private func handleTossTap(_ toss: Toss) {
+    // If the toss is a link, try to open it in the default browser
+    if toss.type == .link, let url = URL(string: toss.content) {
+      #if os(macOS)
+        NSWorkspace.shared.open(url)
+      #else
+        if UIApplication.shared.canOpenURL(url) {
+          UIApplication.shared.open(url)
+        } else {
+          // If URL is not valid, show edit view
+          editingToss = toss
+        }
+      #endif
+    } else {
+      // If it's not a valid link, show the edit/detail view as before
+      #if os(macOS)
+        selectedToss = toss
+        isAddingToss = false
+      #else
+        editingToss = toss
+      #endif
+    }
+  }
+
+  private var spacing: CGFloat {
+    #if os(macOS)
+      20
+    #else
+      16
+    #endif
+  }
 }
