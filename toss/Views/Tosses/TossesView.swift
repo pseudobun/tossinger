@@ -21,6 +21,7 @@ struct TossesView: View {
   @State private var editingToss: Toss?
   @State private var selectedToss: Toss?
   @State private var isAddingToss: Bool = false
+  @State private var searchText = ""
 
   private var columns: [GridItem] {
     #if os(macOS)
@@ -28,6 +29,20 @@ struct TossesView: View {
     #else
       [GridItem(.flexible(), spacing: spacing), GridItem(.flexible(), spacing: spacing)]
     #endif
+  }
+
+  private var filteredTosses: [Toss] {
+    if searchText.isEmpty {
+      return tosses
+    }
+
+    let lowercasedSearch = searchText.lowercased()
+    return tosses.filter { toss in
+      toss.content.lowercased().contains(lowercasedSearch)
+        || toss.metadataTitle?.lowercased().contains(lowercasedSearch) == true
+        || toss.metadataDescription?.lowercased().contains(lowercasedSearch) == true
+        || toss.metadataAuthor?.lowercased().contains(lowercasedSearch) == true
+    }
   }
 
   var body: some View {
@@ -41,7 +56,7 @@ struct TossesView: View {
               }
           #endif
 
-          ForEach(tosses) { toss in
+          ForEach(filteredTosses) { toss in
             TossCard(toss: toss)
               .contextMenu {
                 Button {
@@ -74,6 +89,7 @@ struct TossesView: View {
         .background(.background)
       #endif
       .navigationTitle("Tosses")
+      .searchable(text: $searchText, prompt: "Search tosses...")
       .toolbar {
         #if os(macOS)
           ToolbarItem(placement: .primaryAction) {
