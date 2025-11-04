@@ -121,7 +121,7 @@ class ShareViewController: UIViewController {
     // Fetch metadata with a timeout to respect share extension constraints
     MetadataCoordinator.fetchMetadata(url: url) {
       imageData, title, description, author, platformType in
-      
+
       let context = ModelContext(self.container)
       let toss = Toss(
         content: url.absoluteString,
@@ -132,10 +132,10 @@ class ShareViewController: UIViewController {
       toss.metadataDescription = description
       toss.metadataAuthor = author
       toss.platformType = platformType
-      
+
       context.insert(toss)
       try? context.save()
-      
+
       self.showSuccessAndClose()
     }
   }
