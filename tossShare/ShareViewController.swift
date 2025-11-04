@@ -94,9 +94,10 @@ class ShareViewController: UIViewController {
       itemProvider.loadItem(forTypeIdentifier: UTType.url.identifier) {
         (item, error) in
         if let url = item as? URL {
-          self.saveToss(content: url.absoluteString, type: .link)
+          self.saveTossWithMetadata(url: url)
+        } else {
+          self.showSuccessAndClose()
         }
-        self.showSuccessAndClose()
       }
     }
     // Handle text
@@ -113,6 +114,29 @@ class ShareViewController: UIViewController {
       }
     } else {
       closeExtension()
+    }
+  }
+
+  private func saveTossWithMetadata(url: URL) {
+    // Fetch metadata with a timeout to respect share extension constraints
+    MetadataCoordinator.fetchMetadata(url: url) {
+      imageData, title, description, author, platformType in
+      
+      let context = ModelContext(self.container)
+      let toss = Toss(
+        content: url.absoluteString,
+        type: .link,
+        imageData: imageData
+      )
+      toss.metadataTitle = title
+      toss.metadataDescription = description
+      toss.metadataAuthor = author
+      toss.platformType = platformType
+      
+      context.insert(toss)
+      try? context.save()
+      
+      self.showSuccessAndClose()
     }
   }
 

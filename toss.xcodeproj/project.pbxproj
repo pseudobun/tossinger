@@ -53,13 +53,18 @@
 			);
 			target = 9661E15F2E96CCBE0038A884 /* tossShare */;
 		};
-		9661E1722E96CE1C0038A884 /* Exceptions for "toss" folder in "tossShare" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Models/Toss.swift,
-			);
-			target = 9661E15F2E96CCBE0038A884 /* tossShare */;
-		};
+	9661E1722E96CE1C0038A884 /* Exceptions for "toss" folder in "tossShare" target */ = {
+		isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+		membershipExceptions = (
+			Models/Toss.swift,
+			Services/MetadataCoordinator.swift,
+			Services/GenericWebsiteMetadataFetcher.swift,
+			Services/YouTubeMetadataFetcher.swift,
+			Services/TwitterMetadataFetcher.swift,
+			Services/ScreenshotCapturer.swift,
+		);
+		target = 9661E15F2E96CCBE0038A884 /* tossShare */;
+	};
 		96FF21C42E9539950035FF62 /* Exceptions for "toss" folder in "toss" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
