@@ -53,18 +53,18 @@
 			);
 			target = 9661E15F2E96CCBE0038A884 /* tossShare */;
 		};
-	9661E1722E96CE1C0038A884 /* Exceptions for "toss" folder in "tossShare" target */ = {
-		isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-		membershipExceptions = (
-			Models/Toss.swift,
-			Services/MetadataCoordinator.swift,
-			Services/GenericWebsiteMetadataFetcher.swift,
-			Services/YouTubeMetadataFetcher.swift,
-			Services/TwitterMetadataFetcher.swift,
-			Services/ScreenshotCapturer.swift,
-		);
-		target = 9661E15F2E96CCBE0038A884 /* tossShare */;
-	};
+		9661E1722E96CE1C0038A884 /* Exceptions for "toss" folder in "tossShare" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Models/Toss.swift,
+				Services/GenericWebsiteMetadataFetcher.swift,
+				Services/MetadataCoordinator.swift,
+				Services/ScreenshotCapturer.swift,
+				Services/TwitterMetadataFetcher.swift,
+				Services/YouTubeMetadataFetcher.swift,
+			);
+			target = 9661E15F2E96CCBE0038A884 /* tossShare */;
+		};
 		96FF21C42E9539950035FF62 /* Exceptions for "toss" folder in "toss" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -295,7 +295,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.3.0;
+				MARKETING_VERSION = 0.3.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "lutra-labs.toss.tossShare";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -328,7 +328,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.3.0;
+				MARKETING_VERSION = 0.3.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "lutra-labs.toss.tossShare";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -392,7 +392,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.0;
+				MARKETING_VERSION = 0.3.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "lutra-labs.toss";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -452,7 +452,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.0;
+				MARKETING_VERSION = 0.3.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "lutra-labs.toss";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
