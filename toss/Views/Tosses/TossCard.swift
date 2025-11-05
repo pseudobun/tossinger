@@ -19,7 +19,11 @@ struct TossCard: View {
       // Link card
       ZStack(alignment: .bottomLeading) {
         Color.clear
-          .aspectRatio(linkAspectRatio, contentMode: .fit)
+          #if os(macOS)
+            .aspectRatio(0.9, contentMode: .fit)
+          #else
+            .aspectRatio(1.2, contentMode: .fit)
+          #endif
           .overlay {
             cardContent
           }
@@ -49,7 +53,11 @@ struct TossCard: View {
     } else {
       // Text card
       Color.clear
-        .aspectRatio(textAspectRatio, contentMode: .fit)
+        #if os(macOS)
+          .aspectRatio(0.9, contentMode: .fit)
+        #else
+          .aspectRatio(1.2, contentMode: .fit)
+        #endif
         .overlay(alignment: .topLeading) {
           VStack(alignment: .leading, spacing: 8) {
             Markdown(toss.content)
@@ -90,16 +98,6 @@ struct TossCard: View {
           .scaleEffect(isHovered ? 1.02 : 1.0)
         #endif
     }
-  }
-
-  // MARK: - Aspect Ratios
-
-  private var linkAspectRatio: CGFloat {
-    return 5.0 / 4.0  // 1.25 - Consistent landscape ratio
-  }
-
-  private var textAspectRatio: CGFloat {
-    return 5.0 / 4.0  // 1.25 - Consistent landscape ratio
   }
 
   // MARK: - Card Content
@@ -149,14 +147,22 @@ struct TossCard: View {
       VStack(alignment: .leading, spacing: 0) {
         // Space for top-left X icon
         Color.clear
-          .frame(height: 64)
+          .frame(height: 48)
 
         // Tweet content
         if let description = toss.metadataDescription {
           Text(description)
-            .font(.body)
+            #if os(iOS)
+              .font(.caption)
+            #else
+              .font(.body)
+            #endif
             .foregroundStyle(.white)
-            .lineLimit(12)
+            #if os(iOS)
+              .lineLimit(22)
+            #else
+              .lineLimit(12)
+            #endif
             .multilineTextAlignment(.leading)
             .padding(.leading, 16)
             .padding(.trailing, 16)
@@ -213,7 +219,7 @@ struct TossCard: View {
           Image("x-logo")
             .resizable()
             .aspectRatio(contentMode: .fit)
-            .frame(width: 32, height: 32)
+            .frame(width: 16, height: 16)
             .opacity(toss.platformType == .xPost ? 0.5 : 0.3)
           Spacer()
         }
