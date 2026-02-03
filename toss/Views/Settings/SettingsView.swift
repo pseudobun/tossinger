@@ -117,7 +117,8 @@ struct SettingsView: View {
                     string: "https://github.com/pseudobun"
                   )!
                 ) {
-                  Image("github-mark-white")
+                  Image("github-mark")
+                    .renderingMode(.template)
                     .resizable()
                     .frame(width: 20, height: 20)
                     .foregroundStyle(.primary)
@@ -131,6 +132,7 @@ struct SettingsView: View {
                   )!
                 ) {
                   Image("x-logo")
+                    .renderingMode(.template)
                     .resizable()
                     .frame(width: 18, height: 18)
                     .foregroundStyle(.primary)
@@ -225,7 +227,8 @@ struct SettingsView: View {
                     string: "https://github.com/pseudobun"
                   )!
                 ) {
-                  Image("github-mark-white")
+                  Image("github-mark")
+                    .renderingMode(.template)
                     .resizable()
                     .frame(width: 20, height: 20)
                     .foregroundStyle(.primary)
@@ -238,6 +241,7 @@ struct SettingsView: View {
                   )!
                 ) {
                   Image("x-logo")
+                    .renderingMode(.template)
                     .resizable()
                     .frame(width: 18, height: 18)
                     .foregroundStyle(.primary)
