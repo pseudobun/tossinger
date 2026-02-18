@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "96FF21B32E9539930035FF62"
-               BuildableName = "toss.app"
+               BuildableName = "Tossinger.app"
                BlueprintName = "toss"
                ReferencedContainer = "container:toss.xcodeproj">
             </BuildableReference>
@@ -45,7 +45,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "96FF21B32E9539930035FF62"
-            BuildableName = "toss.app"
+            BuildableName = "Tossinger.app"
             BlueprintName = "toss"
             ReferencedContainer = "container:toss.xcodeproj">
          </BuildableReference>
@@ -62,7 +62,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "96FF21B32E9539930035FF62"
-            BuildableName = "toss.app"
+            BuildableName = "Tossinger.app"
             BlueprintName = "toss"
             ReferencedContainer = "container:toss.xcodeproj">
          </BuildableReference>
