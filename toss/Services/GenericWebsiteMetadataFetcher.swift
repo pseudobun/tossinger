@@ -7,27 +7,30 @@
 
 import Foundation
 
-class GenericWebsiteMetadataFetcher {
-  typealias CompletionHandler = (
-    _ imageData: Data?,
-    _ title: String?,
-    _ description: String?
-  ) -> Void
+struct GenericWebsiteMetadata {
+  let imageData: Data?
+  let title: String?
+  let description: String?
+  let didSucceed: Bool
+}
 
-  static func fetchMetadata(url: URL, completion: @escaping CompletionHandler) {
+class GenericWebsiteMetadataFetcher {
+  static func fetchMetadata(
+    url: URL,
+    timeout: TimeInterval = 10
+  ) async -> GenericWebsiteMetadata {
     // Create request with custom User-Agent to avoid being blocked
     var request = URLRequest(url: url)
     request.setValue(
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
-      forHTTPHeaderField: "User-Agent")
-    request.timeoutInterval = 10
+      forHTTPHeaderField: "User-Agent"
+    )
+    request.timeoutInterval = timeout
 
-    URLSession.shared.dataTask(with: request) { data, response, error in
-      guard let data = data,
-        let html = String(data: data, encoding: .utf8)
-      else {
-        DispatchQueue.main.async { completion(nil, nil, nil) }
-        return
+    do {
+      let (data, _) = try await URLSession.shared.data(for: request)
+      guard let html = String(data: data, encoding: .utf8) else {
+        return GenericWebsiteMetadata(imageData: nil, title: nil, description: nil, didSucceed: false)
       }
 
       let metaTags = extractAllMetaTags(from: html)
@@ -42,22 +45,28 @@ class GenericWebsiteMetadataFetcher {
         ?? metaTags["twitter:description"]
         ?? metaTags["description"]
 
-      // Try to fetch OG image
-      if let imageURLString = metaTags["og:image"]
-        ?? metaTags["twitter:image"],
-        let imageURL = URL(string: imageURLString)
+      if
+        let imageURLString = metaTags["og:image"] ?? metaTags["twitter:image"],
+        let imageURL = URL(string: imageURLString, relativeTo: url)?.absoluteURL
       {
-        fetchImage(url: imageURL) { imageData in
-          DispatchQueue.main.async {
-            completion(imageData, title, description)
-          }
-        }
-      } else {
-        DispatchQueue.main.async {
-          completion(nil, title, description)
-        }
+        let imageData = await fetchImage(url: imageURL, timeout: timeout)
+        return GenericWebsiteMetadata(
+          imageData: imageData,
+          title: title,
+          description: description,
+          didSucceed: imageData != nil || title != nil || description != nil
+        )
       }
-    }.resume()
+
+      return GenericWebsiteMetadata(
+        imageData: nil,
+        title: title,
+        description: description,
+        didSucceed: title != nil || description != nil
+      )
+    } catch {
+      return GenericWebsiteMetadata(imageData: nil, title: nil, description: nil, didSucceed: false)
+    }
   }
 
   // MARK: - Meta Tag Extraction
@@ -156,15 +165,20 @@ class GenericWebsiteMetadataFetcher {
 
   private static func fetchImage(
     url: URL,
-    completion: @escaping (Data?) -> Void
-  ) {
+    timeout: TimeInterval
+  ) async -> Data? {
     var request = URLRequest(url: url)
     request.setValue(
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
-      forHTTPHeaderField: "User-Agent")
+      forHTTPHeaderField: "User-Agent"
+    )
+    request.timeoutInterval = timeout
 
-    URLSession.shared.dataTask(with: request) { data, _, _ in
-      completion(data)
-    }.resume()
+    do {
+      let (data, _) = try await URLSession.shared.data(for: request)
+      return data
+    } catch {
+      return nil
+    }
   }
 }

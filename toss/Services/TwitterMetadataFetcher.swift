@@ -42,27 +42,32 @@ enum TwitterURLType {
   case post  // x.com/username/status/id
 }
 
-class TwitterMetadataFetcher {
-  typealias CompletionHandler = (
-    _ description: String?,
-    _ author: String?,
-    _ urlType: TwitterURLType
-  ) -> Void
+struct TwitterMetadata {
+  let description: String?
+  let author: String?
+  let urlType: TwitterURLType
+  let didSucceed: Bool
+}
 
-  static func fetchMetadata(url: URL, completion: @escaping CompletionHandler) {
+class TwitterMetadataFetcher {
+  static func fetchMetadata(
+    url: URL,
+    timeout: TimeInterval = 8
+  ) async -> TwitterMetadata {
     let urlType = detectURLType(url: url)
 
     switch urlType {
     case .profile:
-      // Extract username from URL
       let username = extractUsername(from: url)
-      DispatchQueue.main.async {
-        completion(nil, username, .profile)
-      }
+      return TwitterMetadata(
+        description: nil,
+        author: username,
+        urlType: .profile,
+        didSucceed: username != nil
+      )
 
     case .post:
-      // Fetch tweet metadata from oEmbed API
-      fetchPostMetadata(url: url, completion: completion)
+      return await fetchPostMetadata(url: url, timeout: timeout)
     }
   }
 
@@ -94,16 +99,14 @@ class TwitterMetadataFetcher {
 
   private static func fetchPostMetadata(
     url: URL,
-    completion: @escaping CompletionHandler
-  ) {
-    // Construct oEmbed API URL
+    timeout: TimeInterval
+  ) async -> TwitterMetadata {
     guard
       var components = URLComponents(
         string: "https://publish.twitter.com/oembed"
       )
     else {
-      DispatchQueue.main.async { completion(nil, nil, .post) }
-      return
+      return TwitterMetadata(description: nil, author: nil, urlType: .post, didSucceed: false)
     }
 
     components.queryItems = [
@@ -111,34 +114,28 @@ class TwitterMetadataFetcher {
     ]
 
     guard let oembedURL = components.url else {
-      DispatchQueue.main.async { completion(nil, nil, .post) }
-      return
+      return TwitterMetadata(description: nil, author: nil, urlType: .post, didSucceed: false)
     }
 
-    URLSession.shared.dataTask(with: oembedURL) { data, response, error in
-      guard let data = data else {
-        DispatchQueue.main.async { completion(nil, nil, .post) }
-        return
-      }
+    var request = URLRequest(url: oembedURL)
+    request.timeoutInterval = timeout
 
-      do {
-        let decoder = JSONDecoder()
-        let oembedData = try decoder.decode(
-          TwitterOEmbedResponse.self,
-          from: data
-        )
+    do {
+      let (data, _) = try await URLSession.shared.data(for: request)
+      let decoder = JSONDecoder()
+      let oembedData = try decoder.decode(TwitterOEmbedResponse.self, from: data)
 
-        // Extract tweet text from HTML
-        let tweetText = extractTweetText(from: oembedData.html)
+      let tweetText = extractTweetText(from: oembedData.html)
 
-        DispatchQueue.main.async {
-          completion(tweetText, oembedData.authorName, .post)
-        }
-
-      } catch {
-        DispatchQueue.main.async { completion(nil, nil, .post) }
-      }
-    }.resume()
+      return TwitterMetadata(
+        description: tweetText,
+        author: oembedData.authorName,
+        urlType: .post,
+        didSucceed: tweetText != nil || !oembedData.authorName.isEmpty
+      )
+    } catch {
+      return TwitterMetadata(description: nil, author: nil, urlType: .post, didSucceed: false)
+    }
   }
 
   // MARK: - Helper Methods

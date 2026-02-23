@@ -5,6 +5,7 @@
 //  Created by Urban Vidovič on 8. 10. 25.
 //
 
+import ImageIO
 import Social
 import SwiftData
 import UIKit
@@ -67,7 +68,6 @@ class ShareViewController: UIViewController {
       // Remove CloudKit configuration for share extension, the main app will handle syncing
       let configuration = ModelConfiguration(
         url: storeURL
-          // cloudKitDatabase: .private("iCloud.lutra-labs.toss") // Remove this!
       )
 
       container = try ModelContainer(
@@ -92,9 +92,11 @@ class ShareViewController: UIViewController {
     // Handle URL
     if itemProvider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
       itemProvider.loadItem(forTypeIdentifier: UTType.url.identifier) {
-        (item, error) in
+        (item, _) in
         if let url = item as? URL {
-          self.saveTossWithMetadata(url: url)
+          Task {
+            await self.saveTossWithMetadata(url: url)
+          }
         } else {
           self.showSuccessAndClose()
         }
@@ -106,7 +108,7 @@ class ShareViewController: UIViewController {
     ) {
       itemProvider.loadItem(
         forTypeIdentifier: UTType.plainText.identifier
-      ) { (item, error) in
+      ) { (item, _) in
         if let text = item as? String {
           self.saveToss(content: text, type: .text)
         }
@@ -117,25 +119,55 @@ class ShareViewController: UIViewController {
     }
   }
 
-  private func saveTossWithMetadata(url: URL) {
-    // Fetch metadata with a timeout to respect share extension constraints
-    MetadataCoordinator.fetchMetadata(url: url) {
-      imageData, title, description, author, platformType in
+  private func saveTossWithMetadata(url: URL) async {
+    let result = await MetadataCoordinator.fetchMetadata(
+      url: url,
+      timeout: MetadataCoordinator.shareExtensionTimeout
+    )
 
-      let context = ModelContext(self.container)
-      let toss = Toss(
-        content: url.absoluteString,
-        type: .link,
-        imageData: imageData
+    let context = ModelContext(container)
+    let toss = Toss(
+      content: url.absoluteString,
+      type: .link,
+      imageData: result.imageData
+    )
+
+    toss.metadataTitle = result.title
+    toss.metadataDescription = result.description
+    toss.metadataAuthor = result.author
+    toss.platformType = result.platformType
+    toss.metadataFetchState = result.fetchState
+    toss.metadataFetchedAt = result.fetchedAt
+
+    let previewSeed = result.description ?? result.title ?? url.absoluteString
+    toss.previewPlainText = Self.makePreview(from: previewSeed)
+    toss.searchIndex = Self.makeSearchIndex(
+      content: url.absoluteString,
+      metadataTitle: result.title,
+      metadataDescription: result.description,
+      metadataAuthor: result.author
+    )
+
+    if let imageData = result.imageData,
+      let optimized = ScreenshotCapturer.optimizedImageData(
+        from: imageData,
+        maxPixelSize: 1024,
+        maxBytes: 350 * 1024,
+        initialQuality: 0.75
       )
-      toss.metadataTitle = title
-      toss.metadataDescription = description
-      toss.metadataAuthor = author
-      toss.platformType = platformType
+    {
+      toss.thumbnailDataOptimized = optimized
 
-      context.insert(toss)
-      try? context.save()
+      if let dimensions = dimensions(for: optimized) {
+        toss.thumbnailWidth = dimensions.width
+        toss.thumbnailHeight = dimensions.height
+      }
+    }
 
+    context.insert(toss)
+    try? context.save()
+
+    await MainActor.run {
       self.showSuccessAndClose()
     }
   }
@@ -143,6 +175,16 @@ class ShareViewController: UIViewController {
   private func saveToss(content: String, type: TossType) {
     let context = ModelContext(container)
     let toss = Toss(content: content, type: type)
+    toss.previewPlainText = Self.makePreview(from: content)
+    toss.searchIndex = Self.makeSearchIndex(
+      content: content,
+      metadataTitle: nil,
+      metadataDescription: nil,
+      metadataAuthor: nil
+    )
+    toss.metadataFetchState = .pending
+    toss.metadataFetchedAt = Date()
+
     context.insert(toss)
     try? context.save()
   }
@@ -163,5 +205,57 @@ class ShareViewController: UIViewController {
 
   private func closeExtension() {
     extensionContext?.completeRequest(returningItems: nil)
+  }
+
+  private func dimensions(for data: Data) -> (width: Int, height: Int)? {
+    guard
+      let source = CGImageSourceCreateWithData(data as CFData, nil),
+      let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+      let width = properties[kCGImagePropertyPixelWidth] as? Int,
+      let height = properties[kCGImagePropertyPixelHeight] as? Int
+    else {
+      return nil
+    }
+
+    return (width, height)
+  }
+
+  private static func makePreview(from markdown: String, maxCharacters: Int = 280) -> String {
+    var text = markdown
+
+    text = text.replacingOccurrences(of: "```[\\s\\S]*?```", with: " ", options: .regularExpression)
+    text = text.replacingOccurrences(of: "`([^`]*)`", with: "$1", options: .regularExpression)
+    text = text.replacingOccurrences(of: "(?m)^#{1,6}\\s*", with: "", options: .regularExpression)
+    text = text.replacingOccurrences(of: "(?m)^\\s*([-*+] |\\d+\\. )", with: "", options: .regularExpression)
+    text = text.replacingOccurrences(of: "(?m)^>\\s?", with: "", options: .regularExpression)
+    text = text.replacingOccurrences(of: "!\\[[^\\]]*\\]\\([^\\)]*\\)", with: " ", options: .regularExpression)
+    text = text.replacingOccurrences(of: "\\[([^\\]]+)\\]\\([^\\)]*\\)", with: "$1", options: .regularExpression)
+    text = text.replacingOccurrences(of: "[*_~]{1,3}", with: "", options: .regularExpression)
+    text = text.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+    text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+    guard text.count > maxCharacters else {
+      return text
+    }
+
+    let index = text.index(text.startIndex, offsetBy: maxCharacters)
+    return String(text[..<index]).trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+
+  private static func makeSearchIndex(
+    content: String,
+    metadataTitle: String?,
+    metadataDescription: String?,
+    metadataAuthor: String?
+  ) -> String {
+    [
+      content,
+      metadataTitle ?? "",
+      metadataDescription ?? "",
+      metadataAuthor ?? "",
+    ]
+    .joined(separator: " ")
+    .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+    .lowercased()
   }
 }

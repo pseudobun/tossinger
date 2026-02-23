@@ -12,6 +12,8 @@ import SwiftUI
 struct tossApp: App {
   var container: ModelContainer
   @StateObject private var appSettings = AppSettings()
+  @Environment(\.scenePhase) private var scenePhase
+  private let backfillMigration = TossBackfillMigration()
 
   init() {
     do {
@@ -49,10 +51,22 @@ struct tossApp: App {
         .environmentObject(appSettings)
         .tint(Color.accentColor)  // Apply accent color globally
         .onAppear {
+          backfillMigration.startIfNeeded(modelContainer: container)
+
           // Register for remote notifications on iOS
           #if os(iOS)
             UIApplication.shared.registerForRemoteNotifications()
           #endif
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+          switch newPhase {
+          case .active:
+            backfillMigration.startIfNeeded(modelContainer: container)
+          case .inactive, .background:
+            backfillMigration.cancel()
+          @unknown default:
+            break
+          }
         }
     }
     .modelContainer(container)

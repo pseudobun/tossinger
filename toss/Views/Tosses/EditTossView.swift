@@ -91,6 +91,13 @@
 
     private func saveAndClose() {
       toss.content = editedContent
+      toss.previewPlainText = CardPreviewText.makePreview(from: editedContent)
+      toss.searchIndex = CardPreviewText.makeSearchIndex(
+        content: editedContent,
+        metadataTitle: toss.metadataTitle,
+        metadataDescription: toss.metadataDescription,
+        metadataAuthor: toss.metadataAuthor
+      )
       try? modelContext.save()
       dismiss()
     }

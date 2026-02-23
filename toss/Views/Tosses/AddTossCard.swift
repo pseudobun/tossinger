@@ -5,19 +5,39 @@
 //  Created by Urban Vidovič on 8. 10. 25.
 //
 
+import ImageIO
 import SwiftData
 import SwiftUI
 
 struct AddTossCard: View {
   @Environment(\.modelContext) private var modelContext
   @State private var content = ""
-  @State private var isLoadingScreenshot = false  // Add this
+  @State private var isLoadingScreenshot = false
   @Binding var isEditing: Bool
   @FocusState private var isFocused: Bool
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 18) {
+    VStack(alignment: .leading, spacing: 12) {
       if isEditing {
+        HStack {
+          Text("Quick toss")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+          Spacer()
+
+          Button {
+            clearEditingState()
+          } label: {
+            Image(systemName: "xmark.circle.fill")
+              .font(.body)
+              .foregroundStyle(.secondary)
+          }
+          .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 12)
+
         ZStack {
           TextEditor(text: $content)
             .font(.body)
@@ -29,7 +49,8 @@ struct AddTossCard: View {
               maxHeight: .infinity,
               alignment: .topLeading
             )
-            .padding(12)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 12)
             .focusable()
             .onKeyPress { press in
               if press.key == .return
@@ -43,7 +64,7 @@ struct AddTossCard: View {
 
           if isLoadingScreenshot {
             ProgressView()
-              .scaleEffect(1.5)
+              .scaleEffect(1.3)
               .frame(
                 maxWidth: .infinity,
                 maxHeight: .infinity
@@ -69,7 +90,7 @@ struct AddTossCard: View {
       }
     }
     .frame(minHeight: 150, maxHeight: 300)
-    .background(AnyShapeStyle(.thinMaterial))
+    .background(cardBackground)
     .cornerRadius(12)
     .overlay(
       RoundedRectangle(cornerRadius: 12)
@@ -80,61 +101,126 @@ struct AddTossCard: View {
     )
   }
 
+  private var cardBackground: Color {
+    #if os(macOS)
+      return Color(nsColor: .controlBackgroundColor)
+    #else
+      return Color(uiColor: .secondarySystemBackground)
+    #endif
+  }
+
   private func saveToss() {
     guard
       !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     else {
-      content = ""
-      isEditing = false
-      isFocused = false
+      clearEditingState()
       return
     }
 
-    // Check if it's a URL
     if let url = URL(
       string: content.trimmingCharacters(in: .whitespaces)
     ),
       url.scheme != nil,
       url.scheme == "http" || url.scheme == "https"
     {
-      // Fetch metadata for URL
-      isLoadingScreenshot = true
-
-      MetadataCoordinator.fetchMetadata(url: url) {
-        imageData,
-        title,
-        description,
-        author,
-        platformType in
-        let toss = Toss(
-          content: url.absoluteString,
-          type: .link,
-          imageData: imageData
-        )
-        toss.metadataTitle = title
-        toss.metadataDescription = description
-        toss.metadataAuthor = author
-        toss.platformType = platformType
-        modelContext.insert(toss)
-
-        withAnimation {
-          content = ""
-          isEditing = false
-          isFocused = false
-          isLoadingScreenshot = false
-        }
+      Task {
+        await persistLinkToss(url: url)
       }
     } else {
-      // Plain text
-      let toss = Toss(content: content, type: .text)
-      modelContext.insert(toss)
+      persistTextToss()
+    }
+  }
 
-      withAnimation {
-        content = ""
-        isEditing = false
-        isFocused = false
+  @MainActor
+  private func persistTextToss() {
+    let toss = Toss(content: content, type: .text)
+    toss.previewPlainText = CardPreviewText.makePreview(from: content)
+    toss.searchIndex = CardPreviewText.makeSearchIndex(
+      content: content,
+      metadataTitle: nil,
+      metadataDescription: nil,
+      metadataAuthor: nil
+    )
+    toss.metadataFetchState = .pending
+    toss.metadataFetchedAt = Date()
+
+    modelContext.insert(toss)
+    clearEditingState()
+  }
+
+  @MainActor
+  private func persistLinkToss(url: URL) async {
+    isLoadingScreenshot = true
+    defer { isLoadingScreenshot = false }
+
+    let result = await MetadataCoordinator.fetchMetadata(
+      url: url,
+      timeout: MetadataCoordinator.defaultMainAppTimeout
+    )
+
+    let toss = Toss(
+      content: url.absoluteString,
+      type: .link,
+      imageData: result.imageData
+    )
+
+    toss.metadataTitle = result.title
+    toss.metadataDescription = result.description
+    toss.metadataAuthor = result.author
+    toss.platformType = result.platformType
+    toss.metadataFetchState = result.fetchState
+    toss.metadataFetchedAt = result.fetchedAt
+
+    let previewSeed = result.description ?? result.title ?? url.absoluteString
+    toss.previewPlainText = CardPreviewText.makePreview(from: previewSeed)
+    toss.searchIndex = CardPreviewText.makeSearchIndex(
+      content: url.absoluteString,
+      metadataTitle: result.title,
+      metadataDescription: result.description,
+      metadataAuthor: result.author
+    )
+
+    if let imageData = result.imageData,
+      let optimized = ScreenshotCapturer.optimizedImageData(
+        from: imageData,
+        maxPixelSize: 1024,
+        maxBytes: 350 * 1024,
+        initialQuality: 0.75
+      )
+    {
+      toss.thumbnailDataOptimized = optimized
+
+      if let dimensions = dimensions(for: optimized) {
+        toss.thumbnailWidth = dimensions.width
+        toss.thumbnailHeight = dimensions.height
       }
     }
+
+    modelContext.insert(toss)
+    clearEditingState()
+  }
+
+  @MainActor
+  private func clearEditingState() {
+    withAnimation {
+      content = ""
+      isEditing = false
+      isFocused = false
+      isLoadingScreenshot = false
+    }
+  }
+
+  private func dimensions(for data: Data) -> (width: Int, height: Int)? {
+    guard
+      let source = CGImageSourceCreateWithData(data as CFData, nil),
+      let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+      let width = properties[kCGImagePropertyPixelWidth] as? Int,
+      let height = properties[kCGImagePropertyPixelHeight] as? Int
+    else {
+      return nil
+    }
+
+    return (width, height)
   }
 }
 

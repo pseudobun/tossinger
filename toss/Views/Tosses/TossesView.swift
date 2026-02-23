@@ -17,10 +17,12 @@ import SwiftUI
 struct TossesView: View {
   @Query(sort: \Toss.createdAt, order: .reverse) private var tosses: [Toss]
   @Environment(\.modelContext) private var modelContext
+
+  @StateObject private var viewModel = TossesViewModel()
   @State private var showingAddToss = false
   @State private var editingToss: Toss?
   @State private var selectedToss: Toss?
-  @State private var isAddingToss: Bool = false
+  @State private var isAddingToss = false
   @State private var searchText = ""
 
   private var columns: [GridItem] {
@@ -32,17 +34,7 @@ struct TossesView: View {
   }
 
   private var filteredTosses: [Toss] {
-    if searchText.isEmpty {
-      return tosses
-    }
-
-    let lowercasedSearch = searchText.lowercased()
-    return tosses.filter { toss in
-      toss.content.lowercased().contains(lowercasedSearch)
-        || toss.metadataTitle?.lowercased().contains(lowercasedSearch) == true
-        || toss.metadataDescription?.lowercased().contains(lowercasedSearch) == true
-        || toss.metadataAuthor?.lowercased().contains(lowercasedSearch) == true
-    }
+    viewModel.filteredTosses(from: tosses)
   }
 
   var body: some View {
@@ -51,9 +43,6 @@ struct TossesView: View {
         LazyVGrid(columns: columns, spacing: spacing) {
           #if os(macOS)
             AddTossCard(isEditing: $isAddingToss)
-              .onTapGesture {
-                // Prevent tap from propagating
-              }
           #endif
 
           ForEach(filteredTosses) { toss in
@@ -79,9 +68,6 @@ struct TossesView: View {
         .padding()
       }
       .scrollIndicators(.hidden, axes: [.vertical, .horizontal])
-      .onTapGesture {
-        isAddingToss = false
-      }
       #if os(iOS)
         .background(Color(UIColor.systemBackground))
         .navigationBarTitleDisplayMode(.inline)
@@ -90,6 +76,12 @@ struct TossesView: View {
       #endif
       .navigationTitle("Tosses")
       .searchable(text: $searchText, prompt: "Search tosses...")
+      .onAppear {
+        viewModel.scheduleSearchDebounce(searchText)
+      }
+      .onChange(of: searchText) { _, newValue in
+        viewModel.scheduleSearchDebounce(newValue)
+      }
       .toolbar {
         #if os(macOS)
           ToolbarItem(placement: .primaryAction) {
@@ -120,26 +112,25 @@ struct TossesView: View {
       #if os(macOS)
         .sheet(isPresented: $showingAddToss) {
           AddTossView()
-          .frame(
-            minWidth: 700,
-            idealWidth: 800,
-            minHeight: 400,
-            idealHeight: 500,
-            maxHeight: 600
-          )
+            .frame(
+              minWidth: 700,
+              idealWidth: 800,
+              minHeight: 400,
+              idealHeight: 500,
+              maxHeight: 600
+            )
         }
         .sheet(item: $selectedToss) { toss in
           TossDetailView(toss: toss)
-          .frame(
-            minWidth: 700,
-            idealWidth: 800,
-            minHeight: 400,
-            idealHeight: 500,
-            maxHeight: 600
-          )
+            .frame(
+              minWidth: 700,
+              idealWidth: 800,
+              minHeight: 400,
+              idealHeight: 500,
+              maxHeight: 600
+            )
         }
       #endif
-
     }
   }
 

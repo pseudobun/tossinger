@@ -41,22 +41,25 @@ struct YouTubeOEmbedResponse: Codable {
   }
 }
 
-class YouTubeMetadataFetcher {
-  typealias CompletionHandler = (
-    _ imageData: Data?,
-    _ title: String?,
-    _ author: String?
-  ) -> Void
+struct YouTubeMetadata {
+  let imageData: Data?
+  let title: String?
+  let author: String?
+  let didSucceed: Bool
+}
 
-  static func fetchMetadata(url: URL, completion: @escaping CompletionHandler) {
+class YouTubeMetadataFetcher {
+  static func fetchMetadata(
+    url: URL,
+    timeout: TimeInterval = 10
+  ) async -> YouTubeMetadata {
     // Construct oEmbed API URL
     guard
       var components = URLComponents(
         string: "https://www.youtube.com/oembed"
       )
     else {
-      DispatchQueue.main.async { completion(nil, nil, nil) }
-      return
+      return YouTubeMetadata(imageData: nil, title: nil, author: nil, didSucceed: false)
     }
 
     components.queryItems = [
@@ -65,62 +68,57 @@ class YouTubeMetadataFetcher {
     ]
 
     guard let oembedURL = components.url else {
-      DispatchQueue.main.async { completion(nil, nil, nil) }
-      return
+      return YouTubeMetadata(imageData: nil, title: nil, author: nil, didSucceed: false)
     }
 
-    URLSession.shared.dataTask(with: oembedURL) { data, response, error in
-      guard let data = data else {
-        DispatchQueue.main.async { completion(nil, nil, nil) }
-        return
-      }
+    var request = URLRequest(url: oembedURL)
+    request.timeoutInterval = timeout
 
-      do {
-        let decoder = JSONDecoder()
-        let oembedData = try decoder.decode(
-          YouTubeOEmbedResponse.self,
-          from: data
+    do {
+      let (data, _) = try await URLSession.shared.data(for: request)
+      let decoder = JSONDecoder()
+      let oembedData = try decoder.decode(YouTubeOEmbedResponse.self, from: data)
+
+      guard let thumbnailURL = URL(string: oembedData.thumbnailURL) else {
+        return YouTubeMetadata(
+          imageData: nil,
+          title: oembedData.title,
+          author: oembedData.authorName,
+          didSucceed: !oembedData.title.isEmpty || !oembedData.authorName.isEmpty
         )
-
-        // Download thumbnail image
-        guard let thumbnailURL = URL(string: oembedData.thumbnailURL)
-        else {
-          DispatchQueue.main.async {
-            completion(nil, oembedData.title, oembedData.authorName)
-          }
-          return
-        }
-
-        fetchImage(url: thumbnailURL) { imageData in
-          DispatchQueue.main.async {
-            completion(
-              imageData,
-              oembedData.title,
-              oembedData.authorName
-            )
-          }
-        }
-
-      } catch {
-        DispatchQueue.main.async { completion(nil, nil, nil) }
       }
-    }.resume()
+
+      let imageData = await fetchImage(url: thumbnailURL, timeout: timeout)
+      return YouTubeMetadata(
+        imageData: imageData,
+        title: oembedData.title,
+        author: oembedData.authorName,
+        didSucceed: imageData != nil || !oembedData.title.isEmpty || !oembedData.authorName.isEmpty
+      )
+    } catch {
+      return YouTubeMetadata(imageData: nil, title: nil, author: nil, didSucceed: false)
+    }
   }
 
   // MARK: - Helper Methods
 
   private static func fetchImage(
     url: URL,
-    completion: @escaping (Data?) -> Void
-  ) {
+    timeout: TimeInterval
+  ) async -> Data? {
     var request = URLRequest(url: url)
     request.setValue(
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
-      forHTTPHeaderField: "User-Agent")
+      forHTTPHeaderField: "User-Agent"
+    )
+    request.timeoutInterval = timeout
 
-    URLSession.shared.dataTask(with: request) { data, _, _ in
-      completion(data)
-    }.resume()
+    do {
+      let (data, _) = try await URLSession.shared.data(for: request)
+      return data
+    } catch {
+      return nil
+    }
   }
 
   static func isYouTubeURL(_ url: URL) -> Bool {

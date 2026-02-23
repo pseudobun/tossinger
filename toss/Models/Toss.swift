@@ -7,7 +7,6 @@
 
 import Foundation
 import SwiftData
-import SwiftUI
 
 enum TossType: String, Codable {
   case text = "text"
@@ -20,6 +19,13 @@ enum PlatformType: String, Codable {
   case xPost
   case github
   case genericWebsite
+}
+
+enum MetadataFetchState: String, Codable {
+  case pending
+  case success
+  case failed
+  case timeout
 }
 
 @Model
@@ -35,6 +41,17 @@ final class Toss {
   var metadataAuthor: String?
   var platformTypeRawValue: String?
 
+  // Phase 2 search/render fields
+  var previewPlainText: String?
+  var searchIndex: String?
+
+  @Attribute(.externalStorage) var thumbnailDataOptimized: Data?
+  var thumbnailWidth: Int?
+  var thumbnailHeight: Int?
+
+  var metadataFetchStateRawValue: String?
+  var metadataFetchedAt: Date?
+
   // Computed property for type safety
   var type: TossType {
     get { TossType(rawValue: typeRawValue) ?? .text }
@@ -47,6 +64,14 @@ final class Toss {
       return PlatformType(rawValue: raw)
     }
     set { platformTypeRawValue = newValue?.rawValue }
+  }
+
+  var metadataFetchState: MetadataFetchState? {
+    get {
+      guard let raw = metadataFetchStateRawValue else { return nil }
+      return MetadataFetchState(rawValue: raw)
+    }
+    set { metadataFetchStateRawValue = newValue?.rawValue }
   }
 
   init(content: String, type: TossType = .text, imageData: Data? = nil) {

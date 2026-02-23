@@ -1,7 +1,8 @@
 #if os(iOS)
-  import SwiftUI
-  import SwiftData
+  import ImageIO
   import MarkdownUI
+  import SwiftData
+  import SwiftUI
 
   struct AddTossView: View {
     @Environment(\.dismiss) private var dismiss
@@ -85,49 +86,108 @@
         return
       }
 
-      // Check if it's a URL
       if let url = URL(
         string: content.trimmingCharacters(in: .whitespaces)
       ),
         url.scheme != nil,
         url.scheme == "http" || url.scheme == "https"
       {
-        // It's a URL - capture screenshot
-        captureWebsiteScreenshot(url: url)
+        Task {
+          await captureWebsiteScreenshot(url: url)
+        }
       } else {
-        // Plain text
-        let toss = Toss(content: content, type: .text)
-        modelContext.insert(toss)
-        dismiss()
+        persistTextToss()
       }
     }
 
-    private func captureWebsiteScreenshot(url: URL) {
+    @MainActor
+    private func persistTextToss() {
+      let toss = Toss(content: content, type: .text)
+      toss.previewPlainText = CardPreviewText.makePreview(from: content)
+      toss.searchIndex = CardPreviewText.makeSearchIndex(
+        content: content,
+        metadataTitle: nil,
+        metadataDescription: nil,
+        metadataAuthor: nil
+      )
+      toss.metadataFetchState = .pending
+      toss.metadataFetchedAt = Date()
+
+      modelContext.insert(toss)
+      dismiss()
+    }
+
+    @MainActor
+    private func captureWebsiteScreenshot(url: URL) async {
       isLoadingScreenshot = true
+      defer { isLoadingScreenshot = false }
 
-      MetadataCoordinator.fetchMetadata(url: url) {
-        imageData, title, description, author, platformType in
-        let toss = Toss(
-          content: url.absoluteString,
-          type: .link,
-          imageData: imageData
+      let result = await MetadataCoordinator.fetchMetadata(
+        url: url,
+        timeout: MetadataCoordinator.defaultMainAppTimeout
+      )
+
+      let toss = Toss(
+        content: url.absoluteString,
+        type: .link,
+        imageData: result.imageData
+      )
+      toss.metadataTitle = result.title
+      toss.metadataDescription = result.description
+      toss.metadataAuthor = result.author
+      toss.platformType = result.platformType
+      toss.metadataFetchState = result.fetchState
+      toss.metadataFetchedAt = result.fetchedAt
+
+      let previewSeed = result.description ?? result.title ?? url.absoluteString
+      toss.previewPlainText = CardPreviewText.makePreview(from: previewSeed)
+      toss.searchIndex = CardPreviewText.makeSearchIndex(
+        content: url.absoluteString,
+        metadataTitle: result.title,
+        metadataDescription: result.description,
+        metadataAuthor: result.author
+      )
+
+      if let imageData = result.imageData,
+        let optimized = ScreenshotCapturer.optimizedImageData(
+          from: imageData,
+          maxPixelSize: 1024,
+          maxBytes: 350 * 1024,
+          initialQuality: 0.75
         )
-        toss.metadataTitle = title
-        toss.metadataDescription = description
-        toss.metadataAuthor = author
-        toss.platformType = platformType
-        modelContext.insert(toss)
+      {
+        toss.thumbnailDataOptimized = optimized
 
-        dismiss()
+        if let dimensions = dimensions(for: optimized) {
+          toss.thumbnailWidth = dimensions.width
+          toss.thumbnailHeight = dimensions.height
+        }
       }
+
+      modelContext.insert(toss)
+      dismiss()
+    }
+
+    private func dimensions(for data: Data) -> (width: Int, height: Int)? {
+      guard
+        let source = CGImageSourceCreateWithData(data as CFData, nil),
+        let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+        let width = properties[kCGImagePropertyPixelWidth] as? Int,
+        let height = properties[kCGImagePropertyPixelHeight] as? Int
+      else {
+        return nil
+      }
+
+      return (width, height)
     }
   }
 #endif
 
 #if os(macOS)
-  import SwiftUI
-  import SwiftData
+  import ImageIO
   import MarkdownUI
+  import SwiftData
+  import SwiftUI
 
   struct AddTossView: View {
     @Environment(\.dismiss) private var dismiss
@@ -219,41 +279,99 @@
         return
       }
 
-      // Check if it's a URL
       if let url = URL(
         string: content.trimmingCharacters(in: .whitespaces)
       ),
         url.scheme != nil,
         url.scheme == "http" || url.scheme == "https"
       {
-        // It's a URL - capture screenshot
-        captureWebsiteScreenshot(url: url)
+        Task {
+          await captureWebsiteScreenshot(url: url)
+        }
       } else {
-        // Plain text
-        let toss = Toss(content: content, type: .text)
-        modelContext.insert(toss)
-        dismiss()
+        persistTextToss()
       }
     }
 
-    private func captureWebsiteScreenshot(url: URL) {
+    @MainActor
+    private func persistTextToss() {
+      let toss = Toss(content: content, type: .text)
+      toss.previewPlainText = CardPreviewText.makePreview(from: content)
+      toss.searchIndex = CardPreviewText.makeSearchIndex(
+        content: content,
+        metadataTitle: nil,
+        metadataDescription: nil,
+        metadataAuthor: nil
+      )
+      toss.metadataFetchState = .pending
+      toss.metadataFetchedAt = Date()
+
+      modelContext.insert(toss)
+      dismiss()
+    }
+
+    @MainActor
+    private func captureWebsiteScreenshot(url: URL) async {
       isLoadingScreenshot = true
+      defer { isLoadingScreenshot = false }
 
-      MetadataCoordinator.fetchMetadata(url: url) {
-        imageData, title, description, author, platformType in
-        let toss = Toss(
-          content: url.absoluteString,
-          type: .link,
-          imageData: imageData
+      let result = await MetadataCoordinator.fetchMetadata(
+        url: url,
+        timeout: MetadataCoordinator.defaultMainAppTimeout
+      )
+
+      let toss = Toss(
+        content: url.absoluteString,
+        type: .link,
+        imageData: result.imageData
+      )
+      toss.metadataTitle = result.title
+      toss.metadataDescription = result.description
+      toss.metadataAuthor = result.author
+      toss.platformType = result.platformType
+      toss.metadataFetchState = result.fetchState
+      toss.metadataFetchedAt = result.fetchedAt
+
+      let previewSeed = result.description ?? result.title ?? url.absoluteString
+      toss.previewPlainText = CardPreviewText.makePreview(from: previewSeed)
+      toss.searchIndex = CardPreviewText.makeSearchIndex(
+        content: url.absoluteString,
+        metadataTitle: result.title,
+        metadataDescription: result.description,
+        metadataAuthor: result.author
+      )
+
+      if let imageData = result.imageData,
+        let optimized = ScreenshotCapturer.optimizedImageData(
+          from: imageData,
+          maxPixelSize: 1024,
+          maxBytes: 350 * 1024,
+          initialQuality: 0.75
         )
-        toss.metadataTitle = title
-        toss.metadataDescription = description
-        toss.metadataAuthor = author
-        toss.platformType = platformType
-        modelContext.insert(toss)
+      {
+        toss.thumbnailDataOptimized = optimized
 
-        dismiss()
+        if let dimensions = dimensions(for: optimized) {
+          toss.thumbnailWidth = dimensions.width
+          toss.thumbnailHeight = dimensions.height
+        }
       }
+
+      modelContext.insert(toss)
+      dismiss()
+    }
+
+    private func dimensions(for data: Data) -> (width: Int, height: Int)? {
+      guard
+        let source = CGImageSourceCreateWithData(data as CFData, nil),
+        let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+        let width = properties[kCGImagePropertyPixelWidth] as? Int,
+        let height = properties[kCGImagePropertyPixelHeight] as? Int
+      else {
+        return nil
+      }
+
+      return (width, height)
     }
   }
 #endif
