@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+env:
+  XCODE_VERSION: "26.2"
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Show Xcode Environment
+        shell: bash
+        run: |
+          xcodebuild -version
+          xcode-select -p
+          xcodebuild -showsdks
+
+      - name: Build macOS
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -scheme toss \
+            -destination 'platform=macOS' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build \
+            2>&1 | tee /tmp/xcodebuild-macos.log
+
+          BUILD_EXIT="${PIPESTATUS[0]}"
+          if [[ "${BUILD_EXIT}" -ne 0 ]]; then
+            echo "----- Extracted compiler errors -----"
+            grep -nE "error:|Command SwiftCompile failed|Command CompileSwift failed|Command SwiftEmitModule failed|fatal error:" /tmp/xcodebuild-macos.log || true
+            exit "${BUILD_EXIT}"
+          fi
+
+  build-ios-simulator:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Show Xcode Environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcode-select -p
+          xcodebuild -showsdks
+          if ! xcodebuild -showsdks | grep -q "iphonesimulator26"; then
+            echo "Expected an iPhoneSimulator26 SDK, but current Xcode does not provide it." >&2
+            exit 1
+          fi
+
+      - name: Build iOS Simulator
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -scheme toss \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            ONLY_ACTIVE_ARCH=YES \
+            build \
+            2>&1 | tee /tmp/xcodebuild-ios.log
+
+          BUILD_EXIT="${PIPESTATUS[0]}"
+          if [[ "${BUILD_EXIT}" -ne 0 ]]; then
+            echo "----- Extracted compiler errors -----"
+            grep -nE "error:|Command SwiftCompile failed|Command CompileSwift failed|Command SwiftEmitModule failed" /tmp/xcodebuild-ios.log || true
+            exit "${BUILD_EXIT}"
+          fi

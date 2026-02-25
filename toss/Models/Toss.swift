@@ -4,7 +4,6 @@
 //
 //  Created by Urban Vidovič on 7. 10. 25.
 //
-
 import Foundation
 import SwiftData
 

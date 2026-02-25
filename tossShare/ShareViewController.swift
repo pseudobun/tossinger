@@ -11,14 +11,33 @@ import SwiftData
 import UIKit
 import UniformTypeIdentifiers
 
-class ShareViewController: UIViewController {
-  private var container: ModelContainer!
+@MainActor
+final class ShareViewController: UIViewController {
+  private enum PayloadKind {
+    case url
+    case text
+  }
+
+  private struct PayloadSelection {
+    let provider: NSItemProvider
+    let kind: PayloadKind
+  }
+
+  private static let cloudKitContainerIdentifier = "iCloud.lutra-labs.toss"
+  private static let appGroupIdentifier = "group.lutra-labs.toss"
+  private static let metadataEnrichmentBudget: TimeInterval = 1.5
+
+  private var container: ModelContainer?
   private let successLabel = UILabel()
+  private var didCompleteRequest = false
 
   override func viewDidLoad() {
     super.viewDidLoad()
     setupUI()
-    setupModelContainer()
+    guard setupModelContainer() else {
+      showMessageAndClose("Unable to initialize iCloud sync.")
+      return
+    }
     handleSharedContent()
   }
 
@@ -26,7 +45,7 @@ class ShareViewController: UIViewController {
     view.backgroundColor = .systemBackground
 
     // Configure success label
-    successLabel.text = "Tossed for later!"
+    successLabel.text = "Tossed and syncing..."
     successLabel.font = .systemFont(ofSize: 17, weight: .medium)
     successLabel.textAlignment = .center
     successLabel.textColor = .label
@@ -50,88 +69,153 @@ class ShareViewController: UIViewController {
     ])
   }
 
-  private func setupModelContainer() {
+  @discardableResult
+  private func setupModelContainer() -> Bool {
     do {
       let schema = Schema([Toss.self])
 
       guard
         let containerURL = FileManager.default.containerURL(
           forSecurityApplicationGroupIdentifier:
-            "group.lutra-labs.toss"
+            Self.appGroupIdentifier
         )
       else {
-        fatalError("Shared container not found")
+        return false
       }
 
       let storeURL = containerURL.appendingPathComponent("default.store")
 
-      // Remove CloudKit configuration for share extension, the main app will handle syncing
       let configuration = ModelConfiguration(
-        url: storeURL
+        url: storeURL,
+        cloudKitDatabase: .private(Self.cloudKitContainerIdentifier)
       )
 
       container = try ModelContainer(
         for: schema,
         configurations: [configuration]
       )
+      return true
     } catch {
-      print("Failed to setup ModelContainer: \(error)")
+      return false
     }
   }
 
   private func handleSharedContent() {
-    guard
-      let extensionItem = extensionContext?.inputItems.first
-        as? NSExtensionItem,
-      let itemProvider = extensionItem.attachments?.first
-    else {
+    guard let selection = selectPayload() else {
       closeExtension()
       return
     }
 
-    // Handle URL
-    if itemProvider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
-      itemProvider.loadItem(forTypeIdentifier: UTType.url.identifier) {
-        (item, _) in
-        if let url = item as? URL {
-          Task {
-            await self.saveTossWithMetadata(url: url)
+    switch selection.kind {
+    case .url:
+      selection.provider.loadItem(forTypeIdentifier: UTType.url.identifier) {
+        item, _ in
+        let parsedURL = Self.extractURL(from: item)
+        Task { @MainActor in
+          guard let url = parsedURL else {
+            self.showMessageAndClose("Unable to read shared URL.")
+            return
           }
-        } else {
-          self.showSuccessAndClose()
+          await self.saveURLToss(url: url)
         }
       }
-    }
-    // Handle text
-    else if itemProvider.hasItemConformingToTypeIdentifier(
-      UTType.plainText.identifier
-    ) {
-      itemProvider.loadItem(
+    case .text:
+      selection.provider.loadItem(
         forTypeIdentifier: UTType.plainText.identifier
-      ) { (item, _) in
-        if let text = item as? String {
-          self.saveToss(content: text, type: .text)
+      ) { item, _ in
+        let parsedText = Self.extractText(from: item)
+        Task { @MainActor in
+          guard let text = parsedText else {
+            self.showMessageAndClose("Unable to read shared text.")
+            return
+          }
+          let didSave = self.saveToss(content: text, type: .text)
+          if didSave {
+            self.showSuccessAndClose()
+          }
         }
-        self.showSuccessAndClose()
       }
-    } else {
-      closeExtension()
     }
   }
 
-  private func saveTossWithMetadata(url: URL) async {
+  private func selectPayload() -> PayloadSelection? {
+    let extensionItems = extensionContext?.inputItems.compactMap {
+      $0 as? NSExtensionItem
+    } ?? []
+
+    var textProvider: NSItemProvider?
+
+    for item in extensionItems {
+      for provider in item.attachments ?? [] {
+        if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
+          return PayloadSelection(provider: provider, kind: .url)
+        }
+
+        if textProvider == nil,
+          provider.hasItemConformingToTypeIdentifier(
+            UTType.plainText.identifier
+          )
+        {
+          textProvider = provider
+        }
+      }
+    }
+
+    if let textProvider {
+      return PayloadSelection(provider: textProvider, kind: .text)
+    }
+
+    return nil
+  }
+
+  private func saveURLToss(url: URL) async {
+    guard let context = makeModelContext() else {
+      showMessageAndClose("Unable to access shared database.")
+      return
+    }
+
+    let toss = Toss(content: url.absoluteString, type: .link, imageData: nil)
+    toss.previewPlainText = Self.makePreview(from: url.absoluteString)
+    toss.searchIndex = Self.makeSearchIndex(
+      content: url.absoluteString,
+      metadataTitle: nil,
+      metadataDescription: nil,
+      metadataAuthor: nil
+    )
+    toss.metadataFetchState = .pending
+    toss.metadataFetchedAt = Date()
+
+    context.insert(toss)
+
+    do {
+      try context.save()
+      showMessage("Tossed and syncing...")
+    } catch {
+      showMessageAndClose("Failed to save toss.")
+      return
+    }
+
     let result = await MetadataCoordinator.fetchMetadata(
       url: url,
-      timeout: MetadataCoordinator.shareExtensionTimeout
+      timeout: min(
+        MetadataCoordinator.shareExtensionTimeout,
+        Self.metadataEnrichmentBudget
+      )
     )
 
-    let context = ModelContext(container)
-    let toss = Toss(
-      content: url.absoluteString,
-      type: .link,
-      imageData: result.imageData
-    )
+    applyMetadata(result, to: toss)
 
+    do {
+      try context.save()
+    } catch {
+      // Keep the initial save; metadata enrichment is best-effort.
+    }
+
+    closeExtension(after: 0.35)
+  }
+
+  private func applyMetadata(_ result: MetadataResult, to toss: Toss) {
+    toss.imageData = result.imageData
     toss.metadataTitle = result.title
     toss.metadataDescription = result.description
     toss.metadataAuthor = result.author
@@ -139,10 +223,10 @@ class ShareViewController: UIViewController {
     toss.metadataFetchState = result.fetchState
     toss.metadataFetchedAt = result.fetchedAt
 
-    let previewSeed = result.description ?? result.title ?? url.absoluteString
+    let previewSeed = result.description ?? result.title ?? toss.content
     toss.previewPlainText = Self.makePreview(from: previewSeed)
     toss.searchIndex = Self.makeSearchIndex(
-      content: url.absoluteString,
+      content: toss.content,
       metadataTitle: result.title,
       metadataDescription: result.description,
       metadataAuthor: result.author
@@ -151,9 +235,10 @@ class ShareViewController: UIViewController {
     if let imageData = result.imageData,
       let optimized = ScreenshotCapturer.optimizedImageData(
         from: imageData,
-        maxPixelSize: 1024,
-        maxBytes: 350 * 1024,
-        initialQuality: 0.75
+        maxPixelSize: ScreenshotCapturer.preferredMaxPixelSize,
+        maxBytes: ScreenshotCapturer.preferredMaxBytes,
+        initialQuality: ScreenshotCapturer.preferredInitialQuality,
+        minimumQuality: ScreenshotCapturer.preferredMinimumQuality
       )
     {
       toss.thumbnailDataOptimized = optimized
@@ -162,18 +247,20 @@ class ShareViewController: UIViewController {
         toss.thumbnailWidth = dimensions.width
         toss.thumbnailHeight = dimensions.height
       }
-    }
-
-    context.insert(toss)
-    try? context.save()
-
-    await MainActor.run {
-      self.showSuccessAndClose()
+    } else {
+      toss.thumbnailDataOptimized = nil
+      toss.thumbnailWidth = nil
+      toss.thumbnailHeight = nil
     }
   }
 
-  private func saveToss(content: String, type: TossType) {
-    let context = ModelContext(container)
+  @discardableResult
+  private func saveToss(content: String, type: TossType) -> Bool {
+    guard let context = makeModelContext() else {
+      showMessageAndClose("Unable to access shared database.")
+      return false
+    }
+
     let toss = Toss(content: content, type: type)
     toss.previewPlainText = Self.makePreview(from: content)
     toss.searchIndex = Self.makeSearchIndex(
@@ -186,25 +273,57 @@ class ShareViewController: UIViewController {
     toss.metadataFetchedAt = Date()
 
     context.insert(toss)
-    try? context.save()
+
+    do {
+      try context.save()
+      return true
+    } catch {
+      showMessageAndClose("Failed to save toss.")
+      return false
+    }
   }
 
   private func showSuccessAndClose() {
-    DispatchQueue.main.async {
-      // Fade in the success message
-      UIView.animate(withDuration: 0.3) {
-        self.successLabel.alpha = 1
-      } completion: { _ in
-        // Wait 1 second, then dismiss
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-          self.closeExtension()
-        }
-      }
+    showMessageAndClose("Tossed and syncing...")
+  }
+
+  private func closeExtension(after delay: TimeInterval = 0) {
+    guard !didCompleteRequest else { return }
+    didCompleteRequest = true
+
+    if delay <= 0 {
+      extensionContext?.completeRequest(returningItems: nil)
+      return
+    }
+
+    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+      self.extensionContext?.completeRequest(returningItems: nil)
     }
   }
 
   private func closeExtension() {
-    extensionContext?.completeRequest(returningItems: nil)
+    closeExtension(after: 0)
+  }
+
+  private func makeModelContext() -> ModelContext? {
+    guard let container else { return nil }
+    return ModelContext(container)
+  }
+
+  private func showMessage(_ message: String) {
+    successLabel.text = message
+
+    UIView.animate(withDuration: 0.2) {
+      self.successLabel.alpha = 1
+    }
+  }
+
+  private func showMessageAndClose(
+    _ message: String,
+    delay: TimeInterval = 0.35
+  ) {
+    showMessage(message)
+    closeExtension(after: delay)
   }
 
   private func dimensions(for data: Data) -> (width: Int, height: Int)? {
@@ -257,5 +376,41 @@ class ShareViewController: UIViewController {
     .joined(separator: " ")
     .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
     .lowercased()
+  }
+
+  nonisolated private static func extractURL(from item: NSSecureCoding?) -> URL? {
+    if let url = item as? URL {
+      return url
+    }
+
+    if let nsURL = item as? NSURL {
+      return nsURL as URL
+    }
+
+    if let text = item as? String {
+      return URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    if let text = item as? NSString {
+      return URL(
+        string: (text as String).trimmingCharacters(
+          in: .whitespacesAndNewlines
+        )
+      )
+    }
+
+    return nil
+  }
+
+  nonisolated private static func extractText(from item: NSSecureCoding?) -> String? {
+    if let text = item as? String {
+      return text
+    }
+
+    if let text = item as? NSString {
+      return text as String
+    }
+
+    return nil
   }
 }

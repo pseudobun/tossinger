@@ -5,6 +5,7 @@
 //  Created by Urban Vidovič on 8. 10. 25.
 //
 
+#if os(macOS)
 import ImageIO
 import SwiftData
 import SwiftUI
@@ -183,9 +184,10 @@ struct AddTossCard: View {
     if let imageData = result.imageData,
       let optimized = ScreenshotCapturer.optimizedImageData(
         from: imageData,
-        maxPixelSize: 1024,
-        maxBytes: 350 * 1024,
-        initialQuality: 0.75
+        maxPixelSize: ScreenshotCapturer.preferredMaxPixelSize,
+        maxBytes: ScreenshotCapturer.preferredMaxBytes,
+        initialQuality: ScreenshotCapturer.preferredInitialQuality,
+        minimumQuality: ScreenshotCapturer.preferredMinimumQuality
       )
     {
       toss.thumbnailDataOptimized = optimized
@@ -224,8 +226,7 @@ struct AddTossCard: View {
   }
 }
 
-#if os(macOS)
-  #Preview("Not Editing") {
+#Preview("Not Editing") {
 
     AddTossCard(isEditing: .constant(false))
       .modelContainer(for: Toss.self, inMemory: true)
@@ -233,14 +234,14 @@ struct AddTossCard: View {
       .padding(40)
       .background(.black)
 
-  }
+}
 
-  #Preview("Editing") {
+#Preview("Editing") {
 
     AddTossCard(isEditing: .constant(true))
       .modelContainer(for: Toss.self, inMemory: true)
       .frame(width: 400, height: 300)
       .padding(40)
       .background(.black)
-  }
+}
 #endif

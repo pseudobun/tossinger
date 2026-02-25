@@ -14,13 +14,18 @@ actor ThumbnailPipeline {
   static let shared = ThumbnailPipeline()
 
   private let cache = NSCache<NSString, ThumbnailImage>()
+  private let minimumLongestEdgePixels: Int
+  private let decodeOversampleFactor: CGFloat
 
   private init() {
     #if os(macOS)
       cache.totalCostLimit = 256 * 1024 * 1024
+      minimumLongestEdgePixels = 720
     #else
       cache.totalCostLimit = 96 * 1024 * 1024
+      minimumLongestEdgePixels = 640
     #endif
+    decodeOversampleFactor = 1.25
   }
 
   func thumbnail(
@@ -30,9 +35,16 @@ actor ThumbnailPipeline {
   ) async -> ThumbnailImage? {
     guard let rawData else { return nil }
 
+    let requestedLongestEdge = Int(
+      max(targetPixels.width, targetPixels.height).rounded(.up)
+    )
+    let oversampledLongestEdge = Int(
+      (CGFloat(requestedLongestEdge) * decodeOversampleFactor).rounded(.up)
+    )
     let maxDimension = max(
-      Int(targetPixels.width.rounded(.up)),
-      Int(targetPixels.height.rounded(.up)),
+      requestedLongestEdge,
+      oversampledLongestEdge,
+      minimumLongestEdgePixels,
       1
     )
 

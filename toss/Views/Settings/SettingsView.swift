@@ -7,10 +7,17 @@
 
 import SwiftData
 import SwiftUI
+#if os(macOS)
+  import AppKit
+  import KeyboardShortcuts
+#endif
 
 struct SettingsView: View {
   @EnvironmentObject var appSettings: AppSettings
   @StateObject private var biometricManager = BiometricAuthManager()
+  #if os(macOS)
+    @State private var hasAccessibilityPermission = AccessibilityPermissionManager.isTrusted()
+  #endif
 
   private var appVersion: String {
     Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
@@ -75,6 +82,43 @@ struct SettingsView: View {
                   "Enable \(biometricManager.biometricTypeString) to secure your tosses."
                 )
               }
+            }
+
+            Section {
+              KeyboardShortcuts.Recorder(
+                "Add selected text to toss",
+                name: .addSelectedTextToToss
+              )
+
+              VStack(alignment: .leading, spacing: 4) {
+                Text("Default: Hyper + T")
+                Text("Works while Tossinger is running.")
+                Text("Grant Accessibility permission so Tossinger can read selected text in other apps.")
+              }
+              .font(.caption)
+              .foregroundStyle(.secondary)
+
+              HStack(spacing: 8) {
+                Circle()
+                  .fill(hasAccessibilityPermission ? Color.green : Color.orange)
+                  .frame(width: 8, height: 8)
+
+                Text(hasAccessibilityPermission ? "Accessibility permission granted" : "Accessibility permission required")
+                  .font(.caption)
+                  .foregroundStyle(.secondary)
+              }
+
+              Button(hasAccessibilityPermission ? "Permission Granted" : "Request Accessibility Permission") {
+                requestAccessibilityPermission()
+              }
+              .disabled(hasAccessibilityPermission)
+
+              Button("Open Accessibility Settings") {
+                openAccessibilitySettings()
+              }
+              .buttonStyle(.link)
+            } header: {
+              Text("Global Shortcut")
             }
 
             Section {
@@ -190,6 +234,34 @@ struct SettingsView: View {
         maxHeight: .infinity,
         alignment: .topLeading
       )
+      .onAppear {
+        refreshAccessibilityPermissionStatus()
+      }
+      .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+        refreshAccessibilityPermissionStatus()
+      }
+    }
+
+    private func refreshAccessibilityPermissionStatus() {
+      hasAccessibilityPermission = AccessibilityPermissionManager.isTrusted()
+    }
+
+    private func requestAccessibilityPermission() {
+      _ = AccessibilityPermissionManager.requestSystemPrompt()
+      refreshAccessibilityPermissionStatus()
+    }
+
+    private func openAccessibilitySettings() {
+      guard
+        let url = URL(
+          string:
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+        )
+      else {
+        return
+      }
+
+      NSWorkspace.shared.open(url)
     }
   #endif
 

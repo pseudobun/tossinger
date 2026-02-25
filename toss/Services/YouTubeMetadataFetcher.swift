@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import ImageIO
 
 // MARK: - YouTube oEmbed Response
 
@@ -88,7 +89,11 @@ class YouTubeMetadataFetcher {
         )
       }
 
-      let imageData = await fetchImage(url: thumbnailURL, timeout: timeout)
+      let imageData = await fetchBestThumbnailData(
+        videoURL: url,
+        providedThumbnailURL: thumbnailURL,
+        timeout: timeout
+      )
       return YouTubeMetadata(
         imageData: imageData,
         title: oembedData.title,
@@ -114,11 +119,97 @@ class YouTubeMetadataFetcher {
     request.timeoutInterval = timeout
 
     do {
-      let (data, _) = try await URLSession.shared.data(for: request)
+      let (data, response) = try await URLSession.shared.data(for: request)
+      guard
+        let http = response as? HTTPURLResponse,
+        (200...299).contains(http.statusCode)
+      else {
+        return nil
+      }
       return data
     } catch {
       return nil
     }
+  }
+
+  private static func fetchBestThumbnailData(
+    videoURL: URL,
+    providedThumbnailURL: URL,
+    timeout: TimeInterval
+  ) async -> Data? {
+    let candidates = thumbnailCandidates(
+      videoURL: videoURL,
+      providedThumbnailURL: providedThumbnailURL
+    )
+
+    var bestData: Data?
+    var bestArea = 0
+
+    for candidate in candidates {
+      guard let data = await fetchImage(url: candidate, timeout: timeout) else {
+        continue
+      }
+
+      guard let dimensions = imageDimensions(for: data) else {
+        if bestData == nil {
+          bestData = data
+        }
+        continue
+      }
+
+      let area = dimensions.width * dimensions.height
+      if area >= 1280 * 720 {
+        return data
+      }
+
+      if area > bestArea {
+        bestArea = area
+        bestData = data
+      }
+    }
+
+    return bestData
+  }
+
+  private static func thumbnailCandidates(
+    videoURL: URL,
+    providedThumbnailURL: URL
+  ) -> [URL] {
+    var urls: [URL] = []
+
+    if let videoID = extractVideoID(from: videoURL) {
+      let paths = [
+        "maxresdefault.jpg",
+        "sddefault.jpg",
+        "hqdefault.jpg",
+        "mqdefault.jpg",
+        "default.jpg",
+      ]
+
+      for path in paths {
+        if let url = URL(string: "https://i.ytimg.com/vi/\(videoID)/\(path)") {
+          urls.append(url)
+        }
+      }
+    }
+
+    urls.append(providedThumbnailURL)
+
+    var seen: Set<String> = []
+    return urls.filter { seen.insert($0.absoluteString).inserted }
+  }
+
+  private static func imageDimensions(for data: Data) -> (width: Int, height: Int)? {
+    guard
+      let source = CGImageSourceCreateWithData(data as CFData, nil),
+      let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+      let width = properties[kCGImagePropertyPixelWidth] as? Int,
+      let height = properties[kCGImagePropertyPixelHeight] as? Int
+    else {
+      return nil
+    }
+
+    return (width, height)
   }
 
   static func isYouTubeURL(_ url: URL) -> Bool {

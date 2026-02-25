@@ -1,5 +1,4 @@
 #if os(iOS)
-  import ImageIO
   import MarkdownUI
   import SwiftData
   import SwiftUI
@@ -79,6 +78,13 @@
     }
 
     private func saveToss() {
+      Task {
+        await saveTossWithSharedPipeline()
+      }
+    }
+
+    @MainActor
+    private func saveTossWithSharedPipeline() async {
       guard
         !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
       else {
@@ -86,105 +92,30 @@
         return
       }
 
-      if let url = URL(
-        string: content.trimmingCharacters(in: .whitespaces)
-      ),
-        url.scheme != nil,
-        url.scheme == "http" || url.scheme == "https"
-      {
-        Task {
-          await captureWebsiteScreenshot(url: url)
-        }
-      } else {
-        persistTextToss()
+      let isLinkFlow = TossCreationPipeline.linkURLIfSupported(from: content) != nil
+      if isLinkFlow {
+        isLoadingScreenshot = true
       }
-    }
-
-    @MainActor
-    private func persistTextToss() {
-      let toss = Toss(content: content, type: .text)
-      toss.previewPlainText = CardPreviewText.makePreview(from: content)
-      toss.searchIndex = CardPreviewText.makeSearchIndex(
-        content: content,
-        metadataTitle: nil,
-        metadataDescription: nil,
-        metadataAuthor: nil
-      )
-      toss.metadataFetchState = .pending
-      toss.metadataFetchedAt = Date()
-
-      modelContext.insert(toss)
-      dismiss()
-    }
-
-    @MainActor
-    private func captureWebsiteScreenshot(url: URL) async {
-      isLoadingScreenshot = true
-      defer { isLoadingScreenshot = false }
-
-      let result = await MetadataCoordinator.fetchMetadata(
-        url: url,
-        timeout: MetadataCoordinator.defaultMainAppTimeout
-      )
-
-      let toss = Toss(
-        content: url.absoluteString,
-        type: .link,
-        imageData: result.imageData
-      )
-      toss.metadataTitle = result.title
-      toss.metadataDescription = result.description
-      toss.metadataAuthor = result.author
-      toss.platformType = result.platformType
-      toss.metadataFetchState = result.fetchState
-      toss.metadataFetchedAt = result.fetchedAt
-
-      let previewSeed = result.description ?? result.title ?? url.absoluteString
-      toss.previewPlainText = CardPreviewText.makePreview(from: previewSeed)
-      toss.searchIndex = CardPreviewText.makeSearchIndex(
-        content: url.absoluteString,
-        metadataTitle: result.title,
-        metadataDescription: result.description,
-        metadataAuthor: result.author
-      )
-
-      if let imageData = result.imageData,
-        let optimized = ScreenshotCapturer.optimizedImageData(
-          from: imageData,
-          maxPixelSize: 1024,
-          maxBytes: 350 * 1024,
-          initialQuality: 0.75
-        )
-      {
-        toss.thumbnailDataOptimized = optimized
-
-        if let dimensions = dimensions(for: optimized) {
-          toss.thumbnailWidth = dimensions.width
-          toss.thumbnailHeight = dimensions.height
+      defer {
+        if isLinkFlow {
+          isLoadingScreenshot = false
         }
       }
 
-      modelContext.insert(toss)
-      dismiss()
-    }
-
-    private func dimensions(for data: Data) -> (width: Int, height: Int)? {
-      guard
-        let source = CGImageSourceCreateWithData(data as CFData, nil),
-        let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-        let width = properties[kCGImagePropertyPixelWidth] as? Int,
-        let height = properties[kCGImagePropertyPixelHeight] as? Int
-      else {
-        return nil
+      do {
+        let toss = try await TossCreationPipeline.buildToss(from: content)
+        modelContext.insert(toss)
+        dismiss()
+      } catch TossCreationPipelineError.emptyContent {
+        dismiss()
+      } catch {
+        // Keep the sheet open so the user can retry.
       }
-
-      return (width, height)
     }
   }
 #endif
 
 #if os(macOS)
-  import ImageIO
   import MarkdownUI
   import SwiftData
   import SwiftUI
@@ -272,6 +203,13 @@
     }
 
     private func saveToss() {
+      Task {
+        await saveTossWithSharedPipeline()
+      }
+    }
+
+    @MainActor
+    private func saveTossWithSharedPipeline() async {
       guard
         !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
       else {
@@ -279,99 +217,25 @@
         return
       }
 
-      if let url = URL(
-        string: content.trimmingCharacters(in: .whitespaces)
-      ),
-        url.scheme != nil,
-        url.scheme == "http" || url.scheme == "https"
-      {
-        Task {
-          await captureWebsiteScreenshot(url: url)
-        }
-      } else {
-        persistTextToss()
+      let isLinkFlow = TossCreationPipeline.linkURLIfSupported(from: content) != nil
+      if isLinkFlow {
+        isLoadingScreenshot = true
       }
-    }
-
-    @MainActor
-    private func persistTextToss() {
-      let toss = Toss(content: content, type: .text)
-      toss.previewPlainText = CardPreviewText.makePreview(from: content)
-      toss.searchIndex = CardPreviewText.makeSearchIndex(
-        content: content,
-        metadataTitle: nil,
-        metadataDescription: nil,
-        metadataAuthor: nil
-      )
-      toss.metadataFetchState = .pending
-      toss.metadataFetchedAt = Date()
-
-      modelContext.insert(toss)
-      dismiss()
-    }
-
-    @MainActor
-    private func captureWebsiteScreenshot(url: URL) async {
-      isLoadingScreenshot = true
-      defer { isLoadingScreenshot = false }
-
-      let result = await MetadataCoordinator.fetchMetadata(
-        url: url,
-        timeout: MetadataCoordinator.defaultMainAppTimeout
-      )
-
-      let toss = Toss(
-        content: url.absoluteString,
-        type: .link,
-        imageData: result.imageData
-      )
-      toss.metadataTitle = result.title
-      toss.metadataDescription = result.description
-      toss.metadataAuthor = result.author
-      toss.platformType = result.platformType
-      toss.metadataFetchState = result.fetchState
-      toss.metadataFetchedAt = result.fetchedAt
-
-      let previewSeed = result.description ?? result.title ?? url.absoluteString
-      toss.previewPlainText = CardPreviewText.makePreview(from: previewSeed)
-      toss.searchIndex = CardPreviewText.makeSearchIndex(
-        content: url.absoluteString,
-        metadataTitle: result.title,
-        metadataDescription: result.description,
-        metadataAuthor: result.author
-      )
-
-      if let imageData = result.imageData,
-        let optimized = ScreenshotCapturer.optimizedImageData(
-          from: imageData,
-          maxPixelSize: 1024,
-          maxBytes: 350 * 1024,
-          initialQuality: 0.75
-        )
-      {
-        toss.thumbnailDataOptimized = optimized
-
-        if let dimensions = dimensions(for: optimized) {
-          toss.thumbnailWidth = dimensions.width
-          toss.thumbnailHeight = dimensions.height
+      defer {
+        if isLinkFlow {
+          isLoadingScreenshot = false
         }
       }
 
-      modelContext.insert(toss)
-      dismiss()
-    }
-
-    private func dimensions(for data: Data) -> (width: Int, height: Int)? {
-      guard
-        let source = CGImageSourceCreateWithData(data as CFData, nil),
-        let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-        let width = properties[kCGImagePropertyPixelWidth] as? Int,
-        let height = properties[kCGImagePropertyPixelHeight] as? Int
-      else {
-        return nil
+      do {
+        let toss = try await TossCreationPipeline.buildToss(from: content)
+        modelContext.insert(toss)
+        dismiss()
+      } catch TossCreationPipelineError.emptyContent {
+        dismiss()
+      } catch {
+        // Keep the sheet open so the user can retry.
       }
-
-      return (width, height)
     }
   }
 #endif

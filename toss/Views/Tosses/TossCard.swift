@@ -39,11 +39,7 @@ struct TossCard: View {
   private var linkCard: some View {
     ZStack(alignment: .bottomLeading) {
       Color.clear
-        #if os(macOS)
-          .aspectRatio(0.9, contentMode: .fit)
-        #else
-          .aspectRatio(1.2, contentMode: .fit)
-        #endif
+        .aspectRatio(cardAspectRatio, contentMode: .fit)
         .overlay {
           LinkCardBody(
             toss: toss,
@@ -66,11 +62,7 @@ struct TossCard: View {
 
   private var textCard: some View {
     Color.clear
-      #if os(macOS)
-        .aspectRatio(0.9, contentMode: .fit)
-      #else
-        .aspectRatio(1.2, contentMode: .fit)
-      #endif
+      .aspectRatio(cardAspectRatio, contentMode: .fit)
       .overlay(alignment: .topLeading) {
         TextCardBody(
           previewText: previewText,
@@ -118,6 +110,14 @@ struct TossCard: View {
       return Color(nsColor: .controlBackgroundColor)
     #else
       return Color(uiColor: .secondarySystemBackground)
+    #endif
+  }
+
+  private var cardAspectRatio: CGFloat {
+    #if os(macOS)
+      return 1.08
+    #else
+      return 1.32
     #endif
   }
 }
@@ -192,7 +192,7 @@ private struct LinkCardBody: View, Equatable {
   }
 
   private var legacyImage: Image? {
-    let data = toss.thumbnailDataOptimized ?? toss.imageData
+    let data = toss.imageData ?? toss.thumbnailDataOptimized
     guard let data else { return nil }
 
     #if os(macOS)

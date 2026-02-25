@@ -12,6 +12,7 @@
 		96DE25D42EB38D4A001716AE /* TossIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 96DE25D32EB38D4A001716AE /* TossIcon.icon */; };
 		96DE25D52EB38D4A001716AE /* TossIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 96DE25D32EB38D4A001716AE /* TossIcon.icon */; };
 		96DE25DB2EB39CD1001716AE /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96DE25DA2EB39CD1001716AE /* CloudKit.framework */; };
+		97A1F0012F0F000100000001 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 97A1F0002F0F000100000001 /* KeyboardShortcuts */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -106,6 +107,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				97A1F0012F0F000100000001 /* KeyboardShortcuts in Frameworks */,
 				969698B22E9562F600A7C3F5 /* MarkdownUI in Frameworks */,
 				96DE25DB2EB39CD1001716AE /* CloudKit.framework in Frameworks */,
 			);
@@ -187,6 +189,7 @@
 			name = toss;
 			packageProductDependencies = (
 				969698B12E9562F600A7C3F5 /* MarkdownUI */,
+				97A1F0002F0F000100000001 /* KeyboardShortcuts */,
 			);
 			productName = toss;
 			productReference = 96FF21B42E9539930035FF62 /* Tossinger.app */;
@@ -221,6 +224,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				969698B02E9562F600A7C3F5 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
+				97A1F0022F0F000100000001 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 96FF21B52E9539930035FF62 /* Products */;
@@ -350,6 +354,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = TossIcon;
+				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]" = TossIconiOS;
+				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphonesimulator*]" = TossIconiOS;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				AUTOMATION_APPLE_EVENTS = YES;
@@ -359,6 +365,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"toss/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
+				"ENABLE_APP_SANDBOX[sdk=macosx*]" = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -375,7 +382,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = toss/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Tossinger;
+				INFOPLIST_KEY_CFBundleName = Tossinger;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSAccessibilityUsageDescription = "Tossinger needs Accessibility access to capture selected text from other apps when you use the global shortcut.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "We use biometrics to secure your app access";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -394,8 +403,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "lutra-labs.toss";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				"PRODUCT_NAME[sdk=macosx*]" = Tossinger;
+				PRODUCT_NAME = Tossinger;
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -411,6 +419,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = TossIcon;
+				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]" = TossIconiOS;
+				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphonesimulator*]" = TossIconiOS;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				AUTOMATION_APPLE_EVENTS = YES;
@@ -420,6 +430,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"toss/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
+				"ENABLE_APP_SANDBOX[sdk=macosx*]" = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -436,7 +447,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = toss/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Tossinger;
+				INFOPLIST_KEY_CFBundleName = Tossinger;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSAccessibilityUsageDescription = "Tossinger needs Accessibility access to capture selected text from other apps when you use the global shortcut.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "We use biometrics to secure your app access";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -455,8 +468,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "lutra-labs.toss";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				"PRODUCT_NAME[sdk=macosx*]" = Tossinger;
+				PRODUCT_NAME = Tossinger;
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -629,6 +641,14 @@
 				minimumVersion = 2.4.1;
 			};
 		};
+		97A1F0022F0F000100000001 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -636,6 +656,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 969698B02E9562F600A7C3F5 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
 			productName = MarkdownUI;
+		};
+		97A1F0002F0F000100000001 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 97A1F0022F0F000100000001 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
