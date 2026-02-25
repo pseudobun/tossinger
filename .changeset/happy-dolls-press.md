@@ -1,0 +1,5 @@
+---
+"tossinger-release": minor
+---
+
+Optimizations.
