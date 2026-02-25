@@ -28,8 +28,15 @@ class GenericWebsiteMetadataFetcher {
     request.timeoutInterval = timeout
 
     do {
-      let (data, _) = try await URLSession.shared.data(for: request)
-      guard let html = String(data: data, encoding: .utf8) else {
+      let (data, response) = try await URLSession.shared.data(for: request)
+      guard isSuccessfulHTTPResponse(response) else {
+        return GenericWebsiteMetadata(imageData: nil, title: nil, description: nil, didSucceed: false)
+      }
+
+      guard
+        let html = String(data: data, encoding: .utf8)
+          ?? String(data: data, encoding: .unicode)
+      else {
         return GenericWebsiteMetadata(imageData: nil, title: nil, description: nil, didSucceed: false)
       }
 
@@ -45,24 +52,21 @@ class GenericWebsiteMetadataFetcher {
         ?? metaTags["twitter:description"]
         ?? metaTags["description"]
 
-      if
-        let imageURLString = metaTags["og:image"] ?? metaTags["twitter:image"],
-        let imageURL = URL(string: imageURLString, relativeTo: url)?.absoluteURL
-      {
-        let imageData = await fetchImage(url: imageURL, timeout: timeout)
-        return GenericWebsiteMetadata(
-          imageData: imageData,
-          title: title,
-          description: description,
-          didSucceed: imageData != nil || title != nil || description != nil
-        )
+      var imageData: Data?
+
+      if let imageURL = preferredImageURL(from: metaTags, baseURL: url) {
+        imageData = await fetchImage(url: imageURL, timeout: timeout)
+      }
+
+      if imageData == nil, let githubFallbackImageURL = githubRepositoryOGURL(for: url) {
+        imageData = await fetchImage(url: githubFallbackImageURL, timeout: timeout)
       }
 
       return GenericWebsiteMetadata(
-        imageData: nil,
+        imageData: imageData,
         title: title,
         description: description,
-        didSucceed: title != nil || description != nil
+        didSucceed: imageData != nil || title != nil || description != nil
       )
     } catch {
       return GenericWebsiteMetadata(imageData: nil, title: nil, description: nil, didSucceed: false)
@@ -74,59 +78,144 @@ class GenericWebsiteMetadataFetcher {
   private static func extractAllMetaTags(from html: String) -> [String: String] {
     var tags: [String: String] = [:]
 
-    // Pattern 1: Standard meta tags - property="X" content="Y"
-    let propertyPattern =
-      #"<meta\s+property=["']([^"']+)["']\s+content=["']([^"']+)["']\s*/?>"#
+    guard
+      let metaTagRegex = try? NSRegularExpression(
+        pattern: #"<meta\b[^>]*>"#,
+        options: [.caseInsensitive]
+      )
+    else {
+      return tags
+    }
 
-    // Pattern 2: Standard meta tags - name="X" content="Y"
-    let namePattern =
-      #"<meta\s+name=["']([^"']+)["']\s+content=["']([^"']+)["']\s*/?>"#
+    let matches = metaTagRegex.matches(
+      in: html,
+      range: NSRange(html.startIndex..., in: html)
+    )
 
-    // Pattern 3: Reverse order - content="Y" property="X"
-    let reversePropertyPattern =
-      #"<meta\s+content=["']([^"']+)["']\s+property=["']([^"']+)["']\s*/?>"#
+    for match in matches {
+      guard let range = Range(match.range, in: html) else {
+        continue
+      }
 
-    // Pattern 4: Reverse order - content="Y" name="X"
-    let reverseNamePattern =
-      #"<meta\s+content=["']([^"']+)["']\s+name=["']([^"']+)["']\s*/?>"#
+      let tag = String(html[range])
+      let attributes = extractAttributes(from: tag)
+      let key = (attributes["property"] ?? attributes["name"])?
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+        .lowercased()
 
-    let patterns = [
-      (propertyPattern, 1, 2),  // (key, value)
-      (namePattern, 1, 2),
-      (reversePropertyPattern, 2, 1),  // (value, key) - reversed
-      (reverseNamePattern, 2, 1),
+      let value = attributes["content"]?
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+
+      guard let key, !key.isEmpty, let value, !value.isEmpty else {
+        continue
+      }
+
+      tags[key] = decodeHTMLEntities(value)
+    }
+
+    return tags
+  }
+
+  private static func extractAttributes(from tag: String) -> [String: String] {
+    var attributes: [String: String] = [:]
+
+    guard
+      let attributeRegex = try? NSRegularExpression(
+        pattern: #"([a-zA-Z_:][a-zA-Z0-9_:\-\.]*)\s*=\s*(['"])(.*?)\2"#,
+        options: [.caseInsensitive, .dotMatchesLineSeparators]
+      )
+    else {
+      return attributes
+    }
+
+    let matches = attributeRegex.matches(
+      in: tag,
+      range: NSRange(tag.startIndex..., in: tag)
+    )
+
+    for match in matches {
+      guard
+        let keyRange = Range(match.range(at: 1), in: tag),
+        let valueRange = Range(match.range(at: 3), in: tag)
+      else {
+        continue
+      }
+
+      let key = String(tag[keyRange]).lowercased()
+      let value = String(tag[valueRange])
+      attributes[key] = value
+    }
+
+    return attributes
+  }
+
+  private static func preferredImageURL(
+    from metaTags: [String: String],
+    baseURL: URL
+  ) -> URL? {
+    let preferredImageKeys = [
+      "og:image:secure_url",
+      "og:image:url",
+      "og:image",
+      "twitter:image",
+      "twitter:image:src",
     ]
 
-    for (pattern, keyIndex, valueIndex) in patterns {
+    for key in preferredImageKeys {
+      guard let value = metaTags[key] else {
+        continue
+      }
+
       guard
-        let regex = try? NSRegularExpression(
-          pattern: pattern,
-          options: [.caseInsensitive]
+        let resolvedURL = resolveImageURL(
+          rawValue: value,
+          baseURL: baseURL
         )
       else {
         continue
       }
 
-      let matches = regex.matches(
-        in: html,
-        range: NSRange(html.startIndex..., in: html)
-      )
-
-      for match in matches {
-        if let keyRange = Range(match.range(at: keyIndex), in: html),
-          let valueRange = Range(
-            match.range(at: valueIndex),
-            in: html
-          )
-        {
-          let key = String(html[keyRange])
-          let value = decodeHTMLEntities(String(html[valueRange]))
-          tags[key] = value
-        }
-      }
+      return resolvedURL
     }
 
-    return tags
+    return nil
+  }
+
+  private static func resolveImageURL(rawValue: String, baseURL: URL) -> URL? {
+    let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return nil }
+
+    if trimmed.hasPrefix("//") {
+      let scheme = baseURL.scheme ?? "https"
+      return URL(string: "\(scheme):\(trimmed)")
+    }
+
+    return URL(string: trimmed, relativeTo: baseURL)?.absoluteURL
+  }
+
+  private static func githubRepositoryOGURL(for url: URL) -> URL? {
+    guard let host = url.host?.lowercased(), host.contains("github.com")
+    else {
+      return nil
+    }
+
+    let components = url.pathComponents.filter { $0 != "/" }
+    guard components.count >= 2 else {
+      return nil
+    }
+
+    let owner = components[0]
+    var repo = components[1]
+
+    if repo.hasSuffix(".git") {
+      repo = String(repo.dropLast(4))
+    }
+
+    guard !owner.isEmpty, !repo.isEmpty else {
+      return nil
+    }
+
+    return URL(string: "https://opengraph.githubassets.com/1/\(owner)/\(repo)")
   }
 
   private static func extractTitleTag(from html: String) -> String? {
@@ -175,10 +264,28 @@ class GenericWebsiteMetadataFetcher {
     request.timeoutInterval = timeout
 
     do {
-      let (data, _) = try await URLSession.shared.data(for: request)
+      let (data, response) = try await URLSession.shared.data(for: request)
+      guard isSuccessfulHTTPResponse(response) else {
+        return nil
+      }
+
+      if let mimeType = response.mimeType?.lowercased(),
+        !mimeType.hasPrefix("image/")
+      {
+        return nil
+      }
+
       return data
     } catch {
       return nil
     }
+  }
+
+  private static func isSuccessfulHTTPResponse(_ response: URLResponse) -> Bool {
+    guard let httpResponse = response as? HTTPURLResponse else {
+      return false
+    }
+
+    return (200..<300).contains(httpResponse.statusCode)
   }
 }

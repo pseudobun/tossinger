@@ -1,0 +1,14 @@
+{
+  "name": "tossinger-release",
+  "private": true,
+  "version": "1.0.3",
+  "description": "Release automation tooling for Tossinger",
+  "scripts": {
+    "changeset": "changeset",
+    "changeset:version": "changeset version && ./scripts/update_xcode_versions.sh --marketing $(node -p \"require('./package.json').version\")",
+    "changeset:publish": "echo \"No npm publish step for app project\""
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.7"
+  }
+}

@@ -27,7 +27,7 @@ struct TossesView: View {
 
   private var columns: [GridItem] {
     #if os(macOS)
-      [GridItem(.adaptive(minimum: 200, maximum: 300), spacing: spacing)]
+      [GridItem(.adaptive(minimum: 220, maximum: 330), spacing: spacing)]
     #else
       [GridItem(.flexible(), spacing: spacing), GridItem(.flexible(), spacing: spacing)]
     #endif

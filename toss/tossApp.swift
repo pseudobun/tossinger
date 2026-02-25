@@ -12,6 +12,9 @@ import SwiftUI
 struct tossApp: App {
   var container: ModelContainer
   @StateObject private var appSettings = AppSettings()
+  #if os(macOS)
+    @StateObject private var macGlobalShortcutController = MacGlobalShortcutController()
+  #endif
   @Environment(\.scenePhase) private var scenePhase
   private let backfillMigration = TossBackfillMigration()
 
@@ -52,6 +55,9 @@ struct tossApp: App {
         .tint(Color.accentColor)  // Apply accent color globally
         .onAppear {
           backfillMigration.startIfNeeded(modelContainer: container)
+          #if os(macOS)
+            macGlobalShortcutController.configureIfNeeded(modelContainer: container)
+          #endif
 
           // Register for remote notifications on iOS
           #if os(iOS)

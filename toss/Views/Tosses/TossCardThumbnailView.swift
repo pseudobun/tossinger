@@ -17,6 +17,7 @@ struct TossCardThumbnailView: View {
       ZStack {
         if let image {
           image
+            .interpolation(.high)
             .resizable()
             .scaledToFill()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -39,12 +40,13 @@ struct TossCardThumbnailView: View {
       return
     }
 
+    let effectiveScale = resolvedDisplayScale
     let targetPixels = CGSize(
-      width: max(1, size.width * displayScale),
-      height: max(1, size.height * displayScale)
+      width: max(1, size.width * effectiveScale),
+      height: max(1, size.height * effectiveScale)
     )
 
-    let rawData = toss.thumbnailDataOptimized ?? toss.imageData
+    let rawData = preferredSourceData
 
     guard
       let platformImage = await ThumbnailPipeline.shared.thumbnail(
@@ -69,7 +71,7 @@ struct TossCardThumbnailView: View {
   }
 
   private var fallbackImage: Image? {
-    guard let data = toss.thumbnailDataOptimized ?? toss.imageData else {
+    guard let data = preferredSourceData else {
       return nil
     }
 
@@ -83,8 +85,22 @@ struct TossCardThumbnailView: View {
   }
 
   private func taskKey(for size: CGSize) -> String {
-    let widthBucket = Int((size.width * displayScale).rounded(.up))
-    let heightBucket = Int((size.height * displayScale).rounded(.up))
-    return "\(toss.persistentModelID)-\(widthBucket)x\(heightBucket)-\((toss.thumbnailDataOptimized ?? toss.imageData)?.count ?? 0)"
+    let effectiveScale = resolvedDisplayScale
+    let widthBucket = Int((size.width * effectiveScale).rounded(.up))
+    let heightBucket = Int((size.height * effectiveScale).rounded(.up))
+    return "\(toss.persistentModelID)-\(widthBucket)x\(heightBucket)-\(preferredSourceData?.count ?? 0)"
+  }
+
+  private var preferredSourceData: Data? {
+    toss.imageData ?? toss.thumbnailDataOptimized
+  }
+
+  private var resolvedDisplayScale: CGFloat {
+    #if os(macOS)
+      let screenScale = NSScreen.main?.backingScaleFactor ?? 1
+      return max(displayScale, screenScale)
+    #else
+      return max(displayScale, UIScreen.main.scale)
+    #endif
   }
 }

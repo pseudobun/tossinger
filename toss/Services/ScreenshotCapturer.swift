@@ -19,6 +19,13 @@ import WebKit
 // MARK: - Screenshot Capturer
 
 class ScreenshotCapturer: NSObject, WKNavigationDelegate {
+  static let preferredMaxPixelSize = 2304
+  static let preferredMaxBytes = 2_400_000
+  static let preferredInitialQuality: CGFloat = 0.90
+  static let preferredMinimumQuality: CGFloat = 0.70
+
+  private static let snapshotViewport = CGSize(width: 2304, height: 1296)
+
   private let url: URL
   private var webView: WKWebView?
   private var continuation: CheckedContinuation<Data?, Never>?
@@ -46,9 +53,10 @@ class ScreenshotCapturer: NSObject, WKNavigationDelegate {
 
   static func optimizedImageData(
     from data: Data,
-    maxPixelSize: Int = 1024,
-    maxBytes: Int = 350 * 1024,
-    initialQuality: CGFloat = 0.75
+    maxPixelSize: Int = preferredMaxPixelSize,
+    maxBytes: Int = preferredMaxBytes,
+    initialQuality: CGFloat = preferredInitialQuality,
+    minimumQuality: CGFloat = preferredMinimumQuality
   ) -> Data? {
     guard
       let source = CGImageSourceCreateWithData(data as CFData, nil)
@@ -69,7 +77,7 @@ class ScreenshotCapturer: NSObject, WKNavigationDelegate {
       }
 
       var quality = initialQuality
-      while quality >= 0.35 {
+      while quality >= minimumQuality {
         guard let jpegData = jpegData(from: cgImage, quality: quality)
         else {
           return nil
@@ -90,7 +98,7 @@ class ScreenshotCapturer: NSObject, WKNavigationDelegate {
       return nil
     }
 
-    return jpegData(from: fallbackCGImage, quality: 0.35)
+    return jpegData(from: fallbackCGImage, quality: minimumQuality)
   }
 
   @MainActor
@@ -104,7 +112,12 @@ class ScreenshotCapturer: NSObject, WKNavigationDelegate {
     let configuration = WKWebViewConfiguration()
     configuration.websiteDataStore = .nonPersistent()
 
-    let frame = CGRect(x: 0, y: 0, width: 1024, height: 683)
+    let frame = CGRect(
+      x: 0,
+      y: 0,
+      width: Self.snapshotViewport.width,
+      height: Self.snapshotViewport.height
+    )
     webView = WKWebView(frame: frame, configuration: configuration)
     webView?.navigationDelegate = self
     webView?.customUserAgent =
@@ -178,9 +191,10 @@ class ScreenshotCapturer: NSObject, WKNavigationDelegate {
 
       let optimizedData = Self.optimizedImageData(
         from: rawData,
-        maxPixelSize: 1024,
-        maxBytes: 350 * 1024,
-        initialQuality: 0.75
+        maxPixelSize: Self.preferredMaxPixelSize,
+        maxBytes: Self.preferredMaxBytes,
+        initialQuality: Self.preferredInitialQuality,
+        minimumQuality: Self.preferredMinimumQuality
       )
 
       self.finish(with: optimizedData)

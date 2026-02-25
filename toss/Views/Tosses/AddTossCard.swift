@@ -183,9 +183,10 @@ struct AddTossCard: View {
     if let imageData = result.imageData,
       let optimized = ScreenshotCapturer.optimizedImageData(
         from: imageData,
-        maxPixelSize: 1024,
-        maxBytes: 350 * 1024,
-        initialQuality: 0.75
+        maxPixelSize: ScreenshotCapturer.preferredMaxPixelSize,
+        maxBytes: ScreenshotCapturer.preferredMaxBytes,
+        initialQuality: ScreenshotCapturer.preferredInitialQuality,
+        minimumQuality: ScreenshotCapturer.preferredMinimumQuality
       )
     {
       toss.thumbnailDataOptimized = optimized
