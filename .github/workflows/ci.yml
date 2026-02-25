@@ -79,9 +79,14 @@ jobs:
 
           SIMULATOR_ID="$(
             xcodebuild -scheme toss -showdestinations \
-              | sed -n 's/.*platform:iOS Simulator[^}]*id:\([^,}]*\).*/\1/p' \
-              | grep -v "placeholder" \
-              | head -n 1
+              | awk '
+                  /platform:iOS Simulator/ && $0 !~ /placeholder/ {
+                    if (match($0, /id:[^,}]+/)) {
+                      print substr($0, RSTART + 3, RLENGTH - 3)
+                      exit
+                    }
+                  }
+                '
           )"
 
           if [[ -z "${SIMULATOR_ID}" ]]; then
