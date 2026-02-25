@@ -9,8 +9,8 @@ This repo is configured for:
 ## How versioning works
 
 1. Create a changeset in your PR:
-   - `npm install`
-   - `npm run changeset`
+   - `pnpm install`
+   - `pnpm run changeset`
 2. Merge PR to `main`.
 3. `Versioning` workflow opens/updates a version PR:
    - bumps `package.json` version
