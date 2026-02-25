@@ -71,53 +71,13 @@ jobs:
             exit 1
           fi
 
-      - name: Select iOS Simulator
-        id: select_simulator
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          SIMULATOR_ID="$(
-            xcodebuild -scheme toss -showdestinations \
-              | awk '
-                  /platform:iOS Simulator/ && $0 !~ /placeholder/ {
-                    if (match($0, /id:[^,}]+/)) {
-                      print substr($0, RSTART + 3, RLENGTH - 3)
-                      exit
-                    }
-                  }
-                '
-          )"
-
-          if [[ -z "${SIMULATOR_ID}" ]]; then
-            echo "No available iOS simulator found on runner." >&2
-            exit 1
-          fi
-
-          RUNNER_CPU_ARCH="$(uname -m)"
-          case "${RUNNER_CPU_ARCH}" in
-            arm64) DESTINATION_ARCH="arm64" ;;
-            x86_64) DESTINATION_ARCH="x86_64" ;;
-            *)
-              echo "Unsupported runner architecture: ${RUNNER_CPU_ARCH}" >&2
-              exit 1
-              ;;
-          esac
-
-          DESTINATION_SPEC="platform=iOS Simulator,id=${SIMULATOR_ID},arch=${DESTINATION_ARCH}"
-
-          echo "Using simulator ${SIMULATOR_ID}"
-          echo "Using simulator arch ${DESTINATION_ARCH}"
-          echo "simulator_id=${SIMULATOR_ID}" >> "$GITHUB_OUTPUT"
-          echo "destination_spec=${DESTINATION_SPEC}" >> "$GITHUB_OUTPUT"
-
       - name: Build iOS Simulator
         shell: bash
         run: |
           set -o pipefail
           xcodebuild \
             -scheme toss \
-            -destination "${{ steps.select_simulator.outputs.destination_spec }}" \
+            -destination 'generic/platform=iOS Simulator' \
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
