@@ -89,8 +89,6 @@ class BiometricAuthManager: ObservableObject {
       return "Face ID"
     case .touchID:
       return "Touch ID"
-    case .opticID:
-      return "Optic ID"
     default:
       return "Biometric Authentication"
     }
@@ -102,8 +100,6 @@ class BiometricAuthManager: ObservableObject {
       return "faceid"
     case .touchID:
       return "touchid"
-    case .opticID:
-      return "opticid"
     default:
       return "lock.shield"
     }
