@@ -29,12 +29,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Select iOS Simulator
+        id: select_simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SIMULATOR_ID="$(
+            xcodebuild -scheme toss -showdestinations \
+              | sed -n 's/.*platform:iOS Simulator[^}]*id:\([^,}]*\).*/\1/p' \
+              | grep -v "placeholder" \
+              | head -n 1
+          )"
+
+          if [[ -z "${SIMULATOR_ID}" ]]; then
+            echo "No available iOS simulator found on runner." >&2
+            exit 1
+          fi
+
+          echo "Using simulator ${SIMULATOR_ID}"
+          echo "simulator_id=${SIMULATOR_ID}" >> "$GITHUB_OUTPUT"
+
       - name: Build iOS Simulator
         run: |
           xcodebuild \
             -scheme toss \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination "id=${{ steps.select_simulator.outputs.simulator_id }}" \
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
+            ONLY_ACTIVE_ARCH=YES \
             build
