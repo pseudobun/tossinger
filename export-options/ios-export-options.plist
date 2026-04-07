@@ -16,7 +16,7 @@
 		<key>lutra-labs.toss</key>
 		<string>Tossinger AppStore</string>
 		<key>lutra-labs.toss.tossShare</key>
-		<string>TossingerShare App Store</string>
+		<string>TossShare AppStore</string>
 	</dict>
 	<key>uploadSymbols</key>
 	<true/>
