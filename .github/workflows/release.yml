@@ -1,0 +1,271 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (x.y.z). Leave empty to use tag/package.json."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  XCODE_VERSION: "26.2"
+
+jobs:
+  # ─────────────────────────────────────────────────
+  # macOS: Build, Sign, Notarize, Release, Tap Update
+  # ─────────────────────────────────────────────────
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Resolve version
+        id: versioning
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          elif [[ -n "${{ github.event.inputs.version }}" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="$(node -p "require('./package.json').version")"
+          fi
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Sync Xcode versions
+        run: |
+          ./scripts/update_xcode_versions.sh \
+            --marketing "$VERSION" \
+            --build "$GITHUB_RUN_NUMBER"
+
+      - name: Import Developer ID certificate
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          p12-password: ${{ secrets.MACOS_CERT_PASSWORD }}
+
+      - name: Build macOS Release
+        shell: bash
+        run: |
+          xcodebuild \
+            -scheme toss \
+            -configuration Release \
+            -destination 'platform=macOS' \
+            -derivedDataPath build/derived \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="${{ secrets.MACOS_DEVELOPER_ID_APP_CERT }}" \
+            DEVELOPMENT_TEAM=RFY9T5P84M \
+            build
+
+          APP_PATH="build/derived/Build/Products/Release/Tossinger.app"
+          if [[ ! -d "$APP_PATH" ]]; then
+            echo "::error::Could not find built app at $APP_PATH"
+            exit 1
+          fi
+          echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
+
+      - name: Codesign with hardened runtime
+        shell: bash
+        run: |
+          codesign \
+            --force --deep --options runtime --timestamp \
+            --sign "${{ secrets.MACOS_DEVELOPER_ID_APP_CERT }}" \
+            "${APP_PATH}"
+          codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
+
+      - name: Notarize and staple
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          ZIP_TMP="${RUNNER_TEMP}/Tossinger-notarize.zip"
+          ditto -c -k --sequesterRsrc --keepParent "${APP_PATH}" "${ZIP_TMP}"
+
+          KEY_PATH="${RUNNER_TEMP}/notary_key.p8"
+          echo "${ASC_PRIVATE_KEY}" | base64 --decode > "${KEY_PATH}"
+
+          xcrun notarytool submit "${ZIP_TMP}" \
+            --key "${KEY_PATH}" \
+            --key-id "${ASC_KEY_ID}" \
+            --issuer "${ASC_ISSUER_ID}" \
+            --wait
+
+          xcrun stapler staple "${APP_PATH}"
+
+      - name: Package zip and compute SHA256
+        id: package
+        shell: bash
+        run: |
+          mkdir -p build
+          ZIP_PATH="build/Tossinger-${VERSION}-macos.zip"
+          ditto -c -k --sequesterRsrc --keepParent "${APP_PATH}" "${ZIP_PATH}"
+
+          SHA256="$(shasum -a 256 "${ZIP_PATH}" | awk '{print $1}')"
+          SHA_PATH="build/Tossinger-${VERSION}-macos.sha256.txt"
+          printf "%s  %s\n" "${SHA256}" "$(basename "${ZIP_PATH}")" > "${SHA_PATH}"
+
+          echo "ZIP_PATH=${ZIP_PATH}" >> "$GITHUB_ENV"
+          echo "SHA_PATH=${SHA_PATH}" >> "$GITHUB_ENV"
+          echo "SHA256=${SHA256}" >> "$GITHUB_ENV"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          files: |
+            ${{ env.ZIP_PATH }}
+            ${{ env.SHA_PATH }}
+          generate_release_notes: true
+
+      - name: Update Homebrew tap
+        shell: bash
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          DOWNLOAD_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}/Tossinger-${VERSION}-macos.zip"
+
+          TAP_DIR="${RUNNER_TEMP}/homebrew-tap"
+          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/pseudobun/homebrew-tap.git" "${TAP_DIR}"
+          mkdir -p "${TAP_DIR}/Casks"
+
+          cat > "${TAP_DIR}/Casks/tossinger.rb" <<CASK_EOF
+          cask "tossinger" do
+            version "${VERSION}"
+            sha256 "${SHA256}"
+
+            url "${DOWNLOAD_URL}"
+            name "Tossinger"
+            desc "Save links and selected text for later"
+            homepage "https://github.com/pseudobun/tossinger"
+
+            depends_on macos: ">= :sequoia"
+
+            app "Tossinger.app"
+
+            zap trash: [
+              "~/Library/Application Support/lutra-labs.toss",
+              "~/Library/Preferences/lutra-labs.toss.plist",
+              "~/Library/Caches/lutra-labs.toss",
+            ]
+          end
+          CASK_EOF
+
+          cd "${TAP_DIR}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/tossinger.rb
+          git diff --cached --quiet || git commit -m "tossinger ${VERSION}"
+          git push
+
+  # ─────────────────────────────────────────────
+  # iOS: Archive, Export IPA, Upload to TestFlight
+  # ─────────────────────────────────────────────
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Resolve version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          elif [[ -n "${{ github.event.inputs.version }}" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="$(node -p "require('./package.json').version")"
+          fi
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Sync Xcode versions
+        run: |
+          ./scripts/update_xcode_versions.sh \
+            --marketing "$VERSION" \
+            --build "$GITHUB_RUN_NUMBER"
+
+      - name: Import Apple Distribution certificate
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          p12-password: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+
+      - name: Prepare App Store Connect API key
+        shell: bash
+        run: |
+          KEY_PATH="${RUNNER_TEMP}/asc_key.p8"
+          echo "${{ secrets.ASC_PRIVATE_KEY }}" | base64 --decode > "${KEY_PATH}"
+          echo "ASC_KEY_PATH=${KEY_PATH}" >> "$GITHUB_ENV"
+
+      - name: Archive iOS
+        shell: bash
+        run: |
+          xcodebuild archive \
+            -scheme toss \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/Tossinger.xcarchive \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=RFY9T5P84M \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "${ASC_KEY_PATH}" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"
+
+      - name: Export IPA
+        shell: bash
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath build/Tossinger.xcarchive \
+            -exportOptionsPlist export-options/ios-export-options.plist \
+            -exportPath build/ipa \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "${ASC_KEY_PATH}" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"
+
+      - name: Upload to TestFlight
+        shell: bash
+        run: |
+          xcrun altool --upload-app \
+            --type ios \
+            --file build/ipa/Tossinger.ipa \
+            --apiKey "${{ secrets.ASC_KEY_ID }}" \
+            --apiIssuer "${{ secrets.ASC_ISSUER_ID }}"
