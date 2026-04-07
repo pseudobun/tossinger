@@ -240,6 +240,8 @@ jobs:
           KEY_PATH="${RUNNER_TEMP}/asc_key.p8"
           echo "${{ secrets.ASC_PRIVATE_KEY }}" | base64 --decode > "${KEY_PATH}"
           echo "ASC_KEY_PATH=${KEY_PATH}" >> "$GITHUB_ENV"
+          mkdir -p ~/.appstoreconnect/private_keys
+          cp "${KEY_PATH}" ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
 
       - name: Archive iOS
         shell: bash
@@ -249,7 +251,7 @@ jobs:
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath build/Tossinger.xcarchive \
-            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM=RFY9T5P84M
 
       - name: Export IPA
