@@ -1,5 +1,6 @@
 import Foundation
 import ImageIO
+import SwiftData
 
 enum TossCreationPipelineError: Error {
   case emptyContent
@@ -103,6 +104,87 @@ enum TossCreationPipeline {
     }
 
     return toss
+  }
+
+  static func buildSkeletonLinkToss(url: URL) -> Toss {
+    let toss = Toss(content: url.absoluteString, type: .link)
+    toss.platformType = MetadataCoordinator.detectPlatformType(url: url)
+    toss.metadataFetchState = .pending
+    toss.metadataFetchedAt = Date()
+    toss.previewPlainText = CardPreviewText.makePreview(from: url.absoluteString)
+    toss.searchIndex = CardPreviewText.makeSearchIndex(
+      content: url.absoluteString,
+      metadataTitle: nil,
+      metadataDescription: nil,
+      metadataAuthor: nil
+    )
+    return toss
+  }
+
+  @MainActor
+  static func enrichLinkToss(
+    _ toss: Toss,
+    in context: ModelContext,
+    timeout: TimeInterval = MetadataCoordinator.defaultMainAppTimeout
+  ) async {
+    guard let url = URL(string: toss.content) else { return }
+
+    let result = await MetadataCoordinator.fetchMetadata(url: url, timeout: timeout)
+
+    toss.metadataTitle = result.title
+    toss.metadataDescription = result.description
+    toss.metadataAuthor = result.author
+    toss.platformType = result.platformType
+    toss.metadataFetchState = result.fetchState
+    toss.metadataFetchedAt = result.fetchedAt
+    toss.imageData = result.imageData
+
+    let previewSeed = result.description ?? result.title ?? url.absoluteString
+    toss.previewPlainText = CardPreviewText.makePreview(from: previewSeed)
+    toss.searchIndex = CardPreviewText.makeSearchIndex(
+      content: url.absoluteString,
+      metadataTitle: result.title,
+      metadataDescription: result.description,
+      metadataAuthor: result.author
+    )
+
+    if let imageData = result.imageData,
+      let optimized = ScreenshotCapturer.optimizedImageData(
+        from: imageData,
+        maxPixelSize: ScreenshotCapturer.preferredMaxPixelSize,
+        maxBytes: ScreenshotCapturer.preferredMaxBytes,
+        initialQuality: ScreenshotCapturer.preferredInitialQuality,
+        minimumQuality: ScreenshotCapturer.preferredMinimumQuality
+      )
+    {
+      toss.thumbnailDataOptimized = optimized
+      if let dimensions = dimensions(for: optimized) {
+        toss.thumbnailWidth = dimensions.width
+        toss.thumbnailHeight = dimensions.height
+      }
+    } else {
+      toss.thumbnailDataOptimized = nil
+      toss.thumbnailWidth = nil
+      toss.thumbnailHeight = nil
+    }
+
+    try? context.save()
+  }
+
+  @MainActor
+  static func retryPendingMetadata(modelContainer: ModelContainer) async {
+    let context = ModelContext(modelContainer)
+    let descriptor = FetchDescriptor<Toss>(
+      predicate: #Predicate<Toss> { $0.metadataFetchStateRawValue == "pending" && $0.typeRawValue == "link" },
+      sortBy: [SortDescriptor(\Toss.createdAt, order: .reverse)]
+    )
+
+    guard let pending = try? context.fetch(descriptor) else { return }
+
+    for toss in pending.prefix(20) {
+      guard !Task.isCancelled else { break }
+      await enrichLinkToss(toss, in: context)
+    }
   }
 
   private static func dimensions(for data: Data) -> (width: Int, height: Int)? {

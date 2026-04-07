@@ -129,14 +129,22 @@ private struct LinkCardBody: View, Equatable {
   var body: some View {
     switch toss.platformType {
     case .xProfile:
-      LinearGradient(
-        colors: [
-          Color(red: 0.1, green: 0.1, blue: 0.1),
-          Color(red: 0.15, green: 0.15, blue: 0.15),
-        ],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-      )
+      ZStack {
+        LinearGradient(
+          colors: [
+            Color(red: 0.1, green: 0.1, blue: 0.1),
+            Color(red: 0.15, green: 0.15, blue: 0.15),
+          ],
+          startPoint: .topLeading,
+          endPoint: .bottomTrailing
+        )
+
+        if toss.metadataFetchState == .pending {
+          ProgressView()
+            .tint(.white.opacity(0.7))
+            .scaleEffect(1.2)
+        }
+      }
 
     case .xPost:
       ZStack {
@@ -149,30 +157,36 @@ private struct LinkCardBody: View, Equatable {
           endPoint: .bottomTrailing
         )
 
-        VStack(alignment: .leading, spacing: 0) {
-          Color.clear
-            .frame(height: 48)
+        if toss.metadataFetchState == .pending && toss.metadataDescription == nil {
+          ProgressView()
+            .tint(.white.opacity(0.7))
+            .scaleEffect(1.2)
+        } else {
+          VStack(alignment: .leading, spacing: 0) {
+            Color.clear
+              .frame(height: 48)
 
-          if let description = toss.metadataDescription {
-            Text(description)
-              #if os(iOS)
-                .font(.caption)
-              #else
-                .font(.body)
-              #endif
-              .foregroundStyle(.white)
-              #if os(iOS)
-                .lineLimit(22)
-              #else
-                .lineLimit(12)
-              #endif
-              .multilineTextAlignment(.leading)
-              .padding(.horizontal, 16)
+            if let description = toss.metadataDescription {
+              Text(description)
+                #if os(iOS)
+                  .font(.caption)
+                #else
+                  .font(.body)
+                #endif
+                .foregroundStyle(.white)
+                #if os(iOS)
+                  .lineLimit(22)
+                #else
+                  .lineLimit(12)
+                #endif
+                .multilineTextAlignment(.leading)
+                .padding(.horizontal, 16)
+            }
+
+            Spacer(minLength: 0)
           }
-
-          Spacer(minLength: 0)
+          .padding(.bottom, 56)
         }
-        .padding(.bottom, 56)
       }
 
     case .youtube, .github, .genericWebsite, nil:
@@ -184,6 +198,8 @@ private struct LinkCardBody: View, Equatable {
             .resizable()
             .scaledToFill()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if toss.metadataFetchState == .pending {
+          LoadingPlaceholder(platformBackgroundColor: platformBackgroundColor)
         } else {
           PlaceholderImage(platformBackgroundColor: platformBackgroundColor)
         }
@@ -212,6 +228,7 @@ private struct LinkCardBody: View, Equatable {
       && lhs.toss.platformType == rhs.toss.platformType
       && lhs.toss.imageData?.count == rhs.toss.imageData?.count
       && lhs.toss.thumbnailDataOptimized?.count == rhs.toss.thumbnailDataOptimized?.count
+      && lhs.toss.metadataFetchStateRawValue == rhs.toss.metadataFetchStateRawValue
   }
 }
 
@@ -228,6 +245,25 @@ private struct PlaceholderImage: View, Equatable {
             .foregroundStyle(.white.opacity(0.45))
 
           Text("Couldn't load image")
+            .font(.caption)
+            .foregroundStyle(.white.opacity(0.7))
+        }
+      }
+  }
+}
+
+private struct LoadingPlaceholder: View, Equatable {
+  let platformBackgroundColor: Color
+
+  var body: some View {
+    Rectangle()
+      .fill(platformBackgroundColor)
+      .overlay {
+        VStack(spacing: 10) {
+          ProgressView()
+            .tint(.white.opacity(0.7))
+            .scaleEffect(1.2)
+          Text("Loading...")
             .font(.caption)
             .foregroundStyle(.white.opacity(0.7))
         }

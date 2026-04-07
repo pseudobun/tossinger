@@ -59,6 +59,10 @@ struct tossApp: App {
             macGlobalShortcutController.configureIfNeeded(modelContainer: container)
           #endif
 
+          Task(priority: .utility) {
+            await TossCreationPipeline.retryPendingMetadata(modelContainer: container)
+          }
+
           // Register for remote notifications on iOS
           #if os(iOS)
             UIApplication.shared.registerForRemoteNotifications()
