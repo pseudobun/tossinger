@@ -4,11 +4,20 @@
 <plist version="1.0">
 <dict>
 	<key>method</key>
-	<string>app-store</string>
+	<string>app-store-connect</string>
 	<key>teamID</key>
 	<string>RFY9T5P84M</string>
 	<key>signingStyle</key>
-	<string>automatic</string>
+	<string>manual</string>
+	<key>signingCertificate</key>
+	<string>Apple Distribution</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>lutra-labs.toss</key>
+		<string>Tossinger AppStore</string>
+		<key>lutra-labs.toss.tossShare</key>
+		<string>TossingerShare App Store</string>
+	</dict>
 	<key>uploadSymbols</key>
 	<true/>
 </dict>
