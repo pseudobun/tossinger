@@ -38,7 +38,8 @@ jobs:
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            ASSETCATALOG_COMPILER_SKIP_APP_ICON_VALIDATION=YES \
+            ASSETCATALOG_COMPILER_APPICON_NAME= \
+            ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS=NO \
             build \
             2>&1 | tee /tmp/xcodebuild-macos.log
 
@@ -83,7 +84,6 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             ONLY_ACTIVE_ARCH=YES \
-            ASSETCATALOG_COMPILER_SKIP_APP_ICON_VALIDATION=YES \
             build \
             2>&1 | tee /tmp/xcodebuild-ios.log
 
