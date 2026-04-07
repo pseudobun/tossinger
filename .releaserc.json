@@ -13,8 +13,7 @@
     }],
     ["@semantic-release/git", {
       "assets": [
-        "toss.xcodeproj/project.pbxproj",
-        "package.json"
+        "toss.xcodeproj/project.pbxproj"
       ],
       "message": "chore(release): v${nextRelease.version} [skip ci]"
     }],

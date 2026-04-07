@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (x.y.z). Leave empty to use tag/package.json."
+        description: "Release version (x.y.z). Leave empty to use tag."
         required: false
         type: string
 
@@ -35,11 +35,6 @@ jobs:
         with:
           xcode-version: ${{ env.XCODE_VERSION }}
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
       - name: Resolve version
         id: versioning
         shell: bash
@@ -49,7 +44,8 @@ jobs:
           elif [[ -n "${{ github.event.inputs.version }}" ]]; then
             VERSION="${{ github.event.inputs.version }}"
           else
-            VERSION="$(node -p "require('./package.json').version")"
+            echo "::error::No version found. This workflow requires a tag or manual version input."
+            exit 1
           fi
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
@@ -197,11 +193,6 @@ jobs:
         with:
           xcode-version: ${{ env.XCODE_VERSION }}
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
       - name: Resolve version
         shell: bash
         run: |
@@ -210,7 +201,8 @@ jobs:
           elif [[ -n "${{ github.event.inputs.version }}" ]]; then
             VERSION="${{ github.event.inputs.version }}"
           else
-            VERSION="$(node -p "require('./package.json').version")"
+            echo "::error::No version found. This workflow requires a tag or manual version input."
+            exit 1
           fi
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
 
