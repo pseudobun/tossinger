@@ -250,9 +250,7 @@ jobs:
             -scheme toss \
             -configuration Release \
             -destination 'generic/platform=iOS' \
-            -archivePath build/Tossinger.xcarchive \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            DEVELOPMENT_TEAM=RFY9T5P84M
+            -archivePath build/Tossinger.xcarchive
 
       - name: Export IPA
         shell: bash
