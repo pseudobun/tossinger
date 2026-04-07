@@ -250,7 +250,11 @@ jobs:
             -scheme toss \
             -configuration Release \
             -destination 'generic/platform=iOS' \
-            -archivePath build/Tossinger.xcarchive
+            -archivePath build/Tossinger.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "${ASC_KEY_PATH}" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"
 
       - name: Export IPA
         shell: bash
@@ -258,7 +262,11 @@ jobs:
           xcodebuild -exportArchive \
             -archivePath build/Tossinger.xcarchive \
             -exportOptionsPlist export-options/ios-export-options.plist \
-            -exportPath build/ipa
+            -exportPath build/ipa \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "${ASC_KEY_PATH}" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"
 
       - name: Upload to TestFlight
         shell: bash
