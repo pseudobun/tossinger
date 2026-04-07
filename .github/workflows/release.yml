@@ -107,11 +107,53 @@ jobs:
           KEY_PATH="${RUNNER_TEMP}/notary_key.p8"
           echo "${ASC_PRIVATE_KEY}" | base64 --decode > "${KEY_PATH}"
 
-          xcrun notarytool submit "${ZIP_TMP}" \
-            --key "${KEY_PATH}" \
-            --key-id "${ASC_KEY_ID}" \
-            --issuer "${ASC_ISSUER_ID}" \
-            --wait
+          NOTARY_ARGS=(
+            --key "${KEY_PATH}"
+            --key-id "${ASC_KEY_ID}"
+            --issuer "${ASC_ISSUER_ID}"
+          )
+
+          # Submit and capture submission ID
+          SUBMIT_OUT=$(xcrun notarytool submit "${ZIP_TMP}" "${NOTARY_ARGS[@]}" 2>&1)
+          echo "${SUBMIT_OUT}"
+          SUBMISSION_ID=$(echo "${SUBMIT_OUT}" | grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' | head -1)
+
+          if [ -z "${SUBMISSION_ID}" ]; then
+            echo "::error::Failed to extract submission ID from notarytool output"
+            exit 1
+          fi
+          echo "Submission ID: ${SUBMISSION_ID}"
+
+          # Poll for completion with 30-minute timeout
+          TIMEOUT=1800
+          INTERVAL=30
+          ELAPSED=0
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+
+            STATUS_OUT=$(xcrun notarytool info "${SUBMISSION_ID}" "${NOTARY_ARGS[@]}" 2>&1)
+            STATUS=$(echo "${STATUS_OUT}" | grep -i "status:" | head -1 | awk '{print $NF}')
+            echo "[${ELAPSED}s] Notarization status: ${STATUS}"
+
+            case "${STATUS}" in
+              Accepted)
+                echo "Notarization succeeded"
+                break
+                ;;
+              Invalid|Rejected)
+                echo "::error::Notarization failed with status: ${STATUS}"
+                xcrun notarytool log "${SUBMISSION_ID}" "${NOTARY_ARGS[@]}" 2>&1 || true
+                exit 1
+                ;;
+            esac
+          done
+
+          if [ $ELAPSED -ge $TIMEOUT ]; then
+            echo "::error::Notarization timed out after ${TIMEOUT}s (submission: ${SUBMISSION_ID}). Apple's notary service may be slow — re-run this workflow to retry."
+            exit 1
+          fi
 
           xcrun stapler staple "${APP_PATH}"
 
