@@ -223,12 +223,16 @@ jobs:
         shell: bash
         run: |
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          echo "${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}" \
-            | base64 --decode \
-            > ~/Library/MobileDevice/Provisioning\ Profiles/toss_appstore.mobileprovision
-          echo "${{ secrets.IOS_SHARE_EXT_PROVISIONING_PROFILE_BASE64 }}" \
-            | base64 --decode \
-            > ~/Library/MobileDevice/Provisioning\ Profiles/tossShare_appstore.mobileprovision
+
+          echo "${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}" | base64 --decode > /tmp/toss.mobileprovision
+          TOSS_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< "$(security cms -D -i /tmp/toss.mobileprovision)")
+          cp /tmp/toss.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/${TOSS_UUID}.mobileprovision
+          echo "TOSS_PROFILE_UUID=${TOSS_UUID}" >> "$GITHUB_ENV"
+
+          echo "${{ secrets.IOS_SHARE_EXT_PROVISIONING_PROFILE_BASE64 }}" | base64 --decode > /tmp/tossShare.mobileprovision
+          SHARE_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< "$(security cms -D -i /tmp/tossShare.mobileprovision)")
+          cp /tmp/tossShare.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/${SHARE_UUID}.mobileprovision
+          echo "SHARE_PROFILE_UUID=${SHARE_UUID}" >> "$GITHUB_ENV"
 
       - name: Prepare App Store Connect API key
         shell: bash
@@ -245,10 +249,8 @@ jobs:
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath build/Tossinger.xcarchive \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            CODE_SIGN_STYLE=Manual \
-            DEVELOPMENT_TEAM=RFY9T5P84M \
-            "PROVISIONING_PROFILE_SPECIFIER="
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=RFY9T5P84M
 
       - name: Export IPA
         shell: bash
