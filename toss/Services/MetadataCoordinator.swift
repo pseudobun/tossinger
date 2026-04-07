@@ -89,6 +89,26 @@ class MetadataCoordinator {
     }
   }
 
+  static func detectPlatformType(url: URL) -> PlatformType {
+    guard let host = url.host?.lowercased() else {
+      return .genericWebsite
+    }
+    if host.contains("youtube.com") || host.contains("youtu.be") {
+      return .youtube
+    }
+    if host.contains("twitter.com") || host.contains("x.com") {
+      let pathComponents = url.pathComponents.filter { $0 != "/" }
+      if pathComponents.contains("status"), pathComponents.count >= 3 {
+        return .xPost
+      }
+      return .xProfile
+    }
+    if host.contains("github.com") {
+      return .github
+    }
+    return .genericWebsite
+  }
+
   fileprivate static var useMetadataTimeoutPolicy: Bool {
     let defaults = UserDefaults.standard
     let key = "UseMetadataTimeoutPolicy"
@@ -151,27 +171,7 @@ private actor DefaultMetadataService: MetadataFetching {
   // MARK: - Platform Detection
 
   private func detectPlatformType(url: URL) -> PlatformType {
-    guard let host = url.host?.lowercased() else {
-      return .genericWebsite
-    }
-
-    if host.contains("youtube.com") || host.contains("youtu.be") {
-      return .youtube
-    }
-
-    if host.contains("twitter.com") || host.contains("x.com") {
-      let pathComponents = url.pathComponents.filter { $0 != "/" }
-      if pathComponents.contains("status"), pathComponents.count >= 3 {
-        return .xPost
-      }
-      return .xProfile
-    }
-
-    if host.contains("github.com") {
-      return .github
-    }
-
-    return .genericWebsite
+    MetadataCoordinator.detectPlatformType(url: url)
   }
 
   // MARK: - Retry

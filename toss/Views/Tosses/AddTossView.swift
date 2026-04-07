@@ -7,7 +7,6 @@
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @State private var content = ""
-    @State private var isLoadingScreenshot = false
     @State private var isPreviewMode = false
     @FocusState private var isFocused: Bool
 
@@ -34,13 +33,6 @@
               .scrollIndicators(.hidden)
               .padding()
               .frame(maxWidth: .infinity, maxHeight: .infinity)
-          }
-
-          if isLoadingScreenshot {
-            ProgressView()
-              .scaleEffect(1.5)
-              .frame(maxWidth: .infinity, maxHeight: .infinity)
-              .background(.ultraThinMaterial)
           }
         }
         .navigationTitle("New Toss")
@@ -92,24 +84,24 @@
         return
       }
 
-      let isLinkFlow = TossCreationPipeline.linkURLIfSupported(from: content) != nil
-      if isLinkFlow {
-        isLoadingScreenshot = true
-      }
-      defer {
-        if isLinkFlow {
-          isLoadingScreenshot = false
-        }
-      }
-
-      do {
-        let toss = try await TossCreationPipeline.buildToss(from: content)
+      if let url = TossCreationPipeline.linkURLIfSupported(from: content) {
+        let toss = TossCreationPipeline.buildSkeletonLinkToss(url: url)
         modelContext.insert(toss)
         dismiss()
-      } catch TossCreationPipelineError.emptyContent {
-        dismiss()
-      } catch {
-        // Keep the sheet open so the user can retry.
+
+        Task { @MainActor in
+          await TossCreationPipeline.enrichLinkToss(toss, in: modelContext)
+        }
+      } else {
+        do {
+          let toss = try await TossCreationPipeline.buildToss(from: content)
+          modelContext.insert(toss)
+          dismiss()
+        } catch TossCreationPipelineError.emptyContent {
+          dismiss()
+        } catch {
+          // Keep the sheet open so the user can retry.
+        }
       }
     }
   }
@@ -125,45 +117,35 @@
     @Environment(\.modelContext) private var modelContext
     @State private var content = ""
     @State private var isPreviewMode = false
-    @State private var isLoadingScreenshot = false
     @FocusState private var isFocused: Bool
 
     var body: some View {
-      ZStack {
-        VStack(spacing: 0) {
-          if isPreviewMode {
-            // Preview mode - rendered markdown
-            ScrollView {
-              Markdown(content)
-                .padding()
-                .frame(
-                  maxWidth: .infinity,
-                  alignment: .topLeading
-                )
-            }
-            .scrollIndicators(.hidden)
-            .frame(maxHeight: .infinity)
-          } else {
-            // Edit mode - text editor
-            TextEditor(text: $content)
-              .font(.system(.body, design: .monospaced))
-              .focused($isFocused)
-              .scrollContentBackground(.hidden)
-              .scrollIndicators(.hidden)
+      VStack(spacing: 0) {
+        if isPreviewMode {
+          // Preview mode - rendered markdown
+          ScrollView {
+            Markdown(content)
               .padding()
-              .focusable()
-              .frame(maxHeight: .infinity)
+              .frame(
+                maxWidth: .infinity,
+                alignment: .topLeading
+              )
           }
-        }
-        .background(Color(NSColor.windowBackgroundColor))
-
-        if isLoadingScreenshot {
-          ProgressView()
-            .scaleEffect(1.5)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(.ultraThinMaterial)
+          .scrollIndicators(.hidden)
+          .frame(maxHeight: .infinity)
+        } else {
+          // Edit mode - text editor
+          TextEditor(text: $content)
+            .font(.system(.body, design: .monospaced))
+            .focused($isFocused)
+            .scrollContentBackground(.hidden)
+            .scrollIndicators(.hidden)
+            .padding()
+            .focusable()
+            .frame(maxHeight: .infinity)
         }
       }
+      .background(Color(NSColor.windowBackgroundColor))
       .toolbar {
         ToolbarItem(placement: .automatic) {
           Toggle(isOn: $isPreviewMode) {
@@ -217,24 +199,24 @@
         return
       }
 
-      let isLinkFlow = TossCreationPipeline.linkURLIfSupported(from: content) != nil
-      if isLinkFlow {
-        isLoadingScreenshot = true
-      }
-      defer {
-        if isLinkFlow {
-          isLoadingScreenshot = false
-        }
-      }
-
-      do {
-        let toss = try await TossCreationPipeline.buildToss(from: content)
+      if let url = TossCreationPipeline.linkURLIfSupported(from: content) {
+        let toss = TossCreationPipeline.buildSkeletonLinkToss(url: url)
         modelContext.insert(toss)
         dismiss()
-      } catch TossCreationPipelineError.emptyContent {
-        dismiss()
-      } catch {
-        // Keep the sheet open so the user can retry.
+
+        Task { @MainActor in
+          await TossCreationPipeline.enrichLinkToss(toss, in: modelContext)
+        }
+      } else {
+        do {
+          let toss = try await TossCreationPipeline.buildToss(from: content)
+          modelContext.insert(toss)
+          dismiss()
+        } catch TossCreationPipelineError.emptyContent {
+          dismiss()
+        } catch {
+          // Keep the sheet open so the user can retry.
+        }
       }
     }
   }

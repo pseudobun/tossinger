@@ -94,10 +94,21 @@
       let context = ModelContext(modelContainer)
 
       do {
-        let toss = try await TossCreationPipeline.buildToss(from: content)
-        context.insert(toss)
-        try context.save()
-        lastErrorMessage = nil
+        if let url = TossCreationPipeline.linkURLIfSupported(from: content) {
+          let toss = TossCreationPipeline.buildSkeletonLinkToss(url: url)
+          context.insert(toss)
+          try context.save()
+          lastErrorMessage = nil
+
+          Task { @MainActor in
+            await TossCreationPipeline.enrichLinkToss(toss, in: context)
+          }
+        } else {
+          let toss = try await TossCreationPipeline.buildToss(from: content)
+          context.insert(toss)
+          try context.save()
+          lastErrorMessage = nil
+        }
       } catch TossCreationPipelineError.emptyContent {
         lastErrorMessage = "No selected text found."
       } catch {
