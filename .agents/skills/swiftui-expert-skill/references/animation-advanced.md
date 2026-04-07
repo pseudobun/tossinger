@@ -1,12 +1,13 @@
 # SwiftUI Advanced Animations
 
-Transactions, phase animations (iOS 17+), keyframe animations (iOS 17+), and completion handlers (iOS 17+).
+Transactions, phase animations (iOS 17+), keyframe animations (iOS 17+), completion handlers (iOS 17+), and `@Animatable` macro (iOS 26+).
 
 ## Table of Contents
 - [Transactions](#transactions)
 - [Phase Animations (iOS 17+)](#phase-animations-ios-17)
 - [Keyframe Animations (iOS 17+)](#keyframe-animations-ios-17)
 - [Animation Completion Handlers (iOS 17+)](#animation-completion-handlers-ios-17)
+- [@Animatable Macro (iOS 26+)](#animatable-macro-ios-26)
 
 ---
 
@@ -322,6 +323,52 @@ Circle()
 
 ---
 
+## @Animatable Macro (iOS 26+)
+
+The `@Animatable` macro auto-synthesizes `animatableData` from all animatable stored properties, eliminating verbose manual conformance. Use `@AnimatableIgnored` to exclude properties that should not animate.
+
+### Before (Manual)
+
+```swift
+struct Wedge: Shape {
+    var startAngle: Angle
+    var endAngle: Angle
+    var drawClockwise: Bool
+
+    var animatableData: AnimatablePair<Double, Double> {
+        get { AnimatablePair(startAngle.radians, endAngle.radians) }
+        set {
+            startAngle = .radians(newValue.first)
+            endAngle = .radians(newValue.second)
+        }
+    }
+
+    func path(in rect: CGRect) -> Path { /* ... */ }
+}
+```
+
+### After (@Animatable)
+
+```swift
+@Animatable
+struct Wedge: Shape {
+    var startAngle: Angle
+    var endAngle: Angle
+    @AnimatableIgnored var drawClockwise: Bool
+
+    func path(in rect: CGRect) -> Path { /* ... */ }
+}
+```
+
+### When to Use
+- **Prefer `@Animatable`** for any custom `Shape`, `AnimatableModifier`, or type conforming to `Animatable` with multiple properties
+- **Use `@AnimatableIgnored`** for properties that control behavior but should not interpolate (e.g., directions, flags, identifiers)
+- The macro works with any type conforming to `Animatable`, not just `Shape`
+
+> Source: "What's new in SwiftUI" (WWDC25, session 256)
+
+---
+
 ## Quick Reference
 
 ### Transactions (All iOS versions)
@@ -349,3 +396,8 @@ Circle()
 - Use `withAnimation(.animation) { } completion: { }` for one-shot completion handlers
 - Use `.transaction(value:)` for handlers that should refire on every value change
 - Without `value:` parameter, completion only fires once
+
+### @Animatable Macro (iOS 26+)
+- Use `@Animatable` to auto-synthesize `animatableData` from stored properties
+- Use `@AnimatableIgnored` to exclude non-animatable properties
+- Replaces verbose manual `animatableData` getters/setters

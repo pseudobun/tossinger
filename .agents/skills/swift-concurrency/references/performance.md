@@ -1,6 +1,25 @@
 # Performance
 
-Optimizing Swift Concurrency code for speed and efficiency.
+Use this when:
+
+- Async code is slower than expected or causing UI hangs.
+- You need to choose between synchronous, asynchronous, and parallel execution.
+- You are profiling concurrency overhead with Instruments.
+
+Skip this file if:
+
+- The issue is a compiler diagnostic about isolation or Sendable. Use `actors.md` or `sendable.md`.
+- You mainly need to fix a memory leak. Use `memory-management.md`.
+
+Jump to:
+
+- Core Principles
+- Common Performance Issues
+- Using Xcode Instruments
+- Suspension Points / Reducing Suspensions
+- Choosing Execution Style
+- Parallelism Costs
+- Optimization Checklist
 
 ## Core Principles
 
@@ -229,10 +248,10 @@ func update() async {
     await process() // Switches away from main actor
 }
 
-// ✅ Inherits isolation
+// ✅ Inherits isolation (still requires await -- but no executor hop)
 @MainActor
 func update() async {
-    process() // Stays on main actor (if nonisolated(nonsending))
+    await process() // Stays on main actor when nonisolated(nonsending)
 }
 
 nonisolated(nonsending) func process() async { }

@@ -1,6 +1,13 @@
 # Glossary
 
-Concise definitions of key Swift Concurrency terms used throughout this skill.
+Use this when:
+
+- You need a quick definition of a Swift Concurrency term.
+- You encounter unfamiliar terminology in other reference files.
+
+Skip this file if:
+
+- You need implementation patterns, not definitions. Use the relevant reference file instead.
 
 ## Actor isolation
 

@@ -1,6 +1,26 @@
 # Tasks
 
-Core patterns for creating, managing, and controlling concurrent work in Swift.
+Use this when:
+
+- You need to start async work from synchronous code.
+- You are choosing between `Task`, `async let`, and task groups.
+- You need cancellation, priorities, or structured vs unstructured guidance.
+
+Skip this file if:
+
+- The problem is mainly actor isolation or sendability. Use `actors.md` or `sendable.md`.
+- The work is stream-shaped. Use `async-sequences.md` or `async-algorithms.md`.
+
+Jump to:
+
+- What is a Task?
+- Cancellation
+- Task Groups
+- Discarding Task Groups
+- Advanced: Task Timeout Pattern
+- SwiftUI Integration
+- Structured vs Unstructured Tasks
+- Task Priorities
 
 ## What is a Task?
 
@@ -550,6 +570,10 @@ let data = try await withTimeout(.seconds(5)) {
 }
 ```
 
+**`cancelAll()` is critical** — without it, the losing task keeps running until scope exit.
+
+`Task.sleep` throws `CancellationError` when the task is cancelled, making it a useful cancellation checkpoint in polling loops. `Task.yield()` only gives other tasks a chance to run and does not check cancellation — if the current task has the highest priority, it may resume immediately.
+
 > **Course Deep Dive**: This topic is covered in detail in [Lesson 3.14: Creating a Task timeout handler using a Task Group (advanced)](https://www.swiftconcurrencycourse.com?utm_source=github&utm_medium=agent-skill&utm_campaign=lesson-reference)
 
 ## Common Patterns
@@ -587,6 +611,14 @@ let profile = Profile(
     followers: try await followers
 )
 ```
+
+## Common Mistakes Agents Make
+
+- Replacing structured child work with many unrelated top-level tasks.
+- Using `Task.detached` just to "make it background."
+- Ignoring cancellation in long-running operations.
+- Keeping a stored task forever without a clear owner or cleanup path.
+- Priorities are hints, not guarantees. The system automatically elevates priority to prevent inversion (e.g., a high-priority task awaiting `.value` of a lower-priority task). Do not rely on priority for correctness.
 
 ## Best Practices
 
