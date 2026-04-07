@@ -2,13 +2,13 @@
   "name": "tossinger-release",
   "private": true,
   "version": "1.0.3",
-  "description": "Release automation tooling for Tossinger",
-  "scripts": {
-    "changeset": "changeset",
-    "changeset:version": "changeset version && ./scripts/update_xcode_versions.sh --marketing $(node -p \"require('./package.json').version\")",
-    "changeset:publish": "echo \"No npm publish step for app project\""
-  },
   "devDependencies": {
-    "@changesets/cli": "^2.29.7"
+    "semantic-release": "^24.2.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/release-notes-generator": "^14.0.3",
+    "@semantic-release/exec": "^7.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^11.0.1",
+    "conventional-changelog-conventionalcommits": "^8.0.0"
   }
 }

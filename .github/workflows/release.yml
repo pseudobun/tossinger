@@ -132,14 +132,13 @@ jobs:
           echo "SHA_PATH=${SHA_PATH}" >> "$GITHUB_ENV"
           echo "SHA256=${SHA256}" >> "$GITHUB_ENV"
 
-      - name: Create GitHub Release
+      - name: Upload release artifacts
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ env.VERSION }}
           files: |
             ${{ env.ZIP_PATH }}
             ${{ env.SHA_PATH }}
-          generate_release_notes: true
 
       - name: Update Homebrew tap
         shell: bash
