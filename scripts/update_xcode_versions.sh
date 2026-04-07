@@ -59,4 +59,4 @@ if [[ -n "$BUILD_NUMBER" ]]; then
 fi
 
 echo "Updated versions in ${PBXPROJ}:"
-rg -n "MARKETING_VERSION =|CURRENT_PROJECT_VERSION =" "$PBXPROJ"
+grep -nE "MARKETING_VERSION =|CURRENT_PROJECT_VERSION =" "$PBXPROJ"
