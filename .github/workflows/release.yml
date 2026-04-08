@@ -362,15 +362,16 @@ jobs:
       - name: Archive iOS
         shell: bash
         run: |
+          # No -allowProvisioningUpdates: with automatic signing it forces
+          # Xcode to also reconcile Apple Development certs/profiles via the
+          # ASC API, which fails when the team has hit the iOS Development
+          # cert quota. Archive builds only need a Distribution cert + a
+          # Distribution profile, both of which are already imported above.
           xcodebuild archive \
             -scheme toss \
             -configuration Release \
             -destination 'generic/platform=iOS' \
-            -archivePath build/Tossinger.xcarchive \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "${ASC_KEY_PATH}" \
-            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
-            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"
+            -archivePath build/Tossinger.xcarchive
 
       - name: Export IPA
         shell: bash
@@ -378,11 +379,7 @@ jobs:
           xcodebuild -exportArchive \
             -archivePath build/Tossinger.xcarchive \
             -exportOptionsPlist export-options/ios-export-options.plist \
-            -exportPath build/ipa \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "${ASC_KEY_PATH}" \
-            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
-            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"
+            -exportPath build/ipa
 
       - name: Upload to TestFlight
         shell: bash
