@@ -22,6 +22,29 @@
 * **Minimalistic**: No extra features, just you and your tosses, I hate bloated software
 * **Biometrics lock**: Lock with device biometrics if you want
 
+## Install
+
+### iOS
+
+<a href="https://apps.apple.com/app/id6754607504">
+  <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" height="50">
+</a>
+
+### macOS
+
+```sh
+brew install --cask pseudobun/tap/tossinger
+```
+
+If you don't have the tap added yet:
+
+```sh
+brew tap pseudobun/tap
+brew install --cask tossinger
+```
+
+Requires macOS 15 (Sequoia) or newer.
+
 ## How it works
 
 1. **See something interesting?** Hit share → Tossinger
