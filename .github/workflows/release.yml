@@ -94,13 +94,16 @@ jobs:
             "${APP_PATH}"
           codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
 
-      - name: Notarize and staple
+      - name: Notarize (non-blocking) and opportunistically staple
         shell: bash
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
         run: |
+          mkdir -p build
+          NOTARY_PATH="build/Tossinger-${VERSION}-macos.notarization.txt"
+
           ZIP_TMP="${RUNNER_TEMP}/Tossinger-notarize.zip"
           ditto -c -k --sequesterRsrc --keepParent "${APP_PATH}" "${ZIP_TMP}"
 
@@ -124,10 +127,16 @@ jobs:
           fi
           echo "Submission ID: ${SUBMISSION_ID}"
 
-          # Poll for completion with 30-minute timeout
-          TIMEOUT=1800
+          # Persist submission ID as a release asset so the staple workflow can find it later
+          printf "%s\n" "${SUBMISSION_ID}" > "${NOTARY_PATH}"
+          echo "NOTARY_PATH=${NOTARY_PATH}" >> "$GITHUB_ENV"
+
+          # Opportunistic 5-minute poll: if Apple is fast, we get a stapled release in one run.
+          # Otherwise we ship unstapled and let the staple-release workflow catch up later.
+          TIMEOUT=300
           INTERVAL=30
           ELAPSED=0
+          FINAL_STATUS="InProgress"
 
           while [ $ELAPSED -lt $TIMEOUT ]; do
             sleep $INTERVAL
@@ -139,23 +148,30 @@ jobs:
 
             case "${STATUS}" in
               Accepted)
-                echo "Notarization succeeded"
+                FINAL_STATUS="Accepted"
                 break
                 ;;
               Invalid|Rejected)
-                echo "::error::Notarization failed with status: ${STATUS}"
-                xcrun notarytool log "${SUBMISSION_ID}" "${NOTARY_ARGS[@]}" 2>&1 || true
-                exit 1
+                FINAL_STATUS="${STATUS}"
+                break
                 ;;
             esac
           done
 
-          if [ $ELAPSED -ge $TIMEOUT ]; then
-            echo "::error::Notarization timed out after ${TIMEOUT}s (submission: ${SUBMISSION_ID}). Apple's notary service may be slow — re-run this workflow to retry."
-            exit 1
-          fi
-
-          xcrun stapler staple "${APP_PATH}"
+          case "${FINAL_STATUS}" in
+            Accepted)
+              echo "Notarization succeeded within opportunistic window — stapling now."
+              xcrun stapler staple "${APP_PATH}"
+              ;;
+            Invalid|Rejected)
+              echo "::error::Notarization failed with status: ${FINAL_STATUS} (submission: ${SUBMISSION_ID})"
+              xcrun notarytool log "${SUBMISSION_ID}" "${NOTARY_ARGS[@]}" 2>&1 || true
+              exit 1
+              ;;
+            *)
+              echo "::warning::Notarization still In Progress after ${TIMEOUT}s (submission: ${SUBMISSION_ID}). Shipping unstapled — Gatekeeper will validate online once Apple accepts. Run the staple-release workflow later: gh workflow run staple-release.yml -f version=${VERSION}"
+              ;;
+          esac
 
       - name: Package zip and compute SHA256
         id: package
@@ -180,6 +196,7 @@ jobs:
           files: |
             ${{ env.ZIP_PATH }}
             ${{ env.SHA_PATH }}
+            ${{ env.NOTARY_PATH }}
 
       - name: Update Homebrew tap
         shell: bash

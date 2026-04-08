@@ -1,0 +1,197 @@
+name: Staple Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version to staple (x.y.z, no leading v)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  XCODE_VERSION: "26.2"
+
+jobs:
+  staple:
+    runs-on: macos-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Resolve version
+        shell: bash
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if [ -z "${VERSION}" ]; then
+            echo "::error::version input is required"
+            exit 1
+          fi
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Download release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p build
+          gh release download "v${VERSION}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --pattern "Tossinger-${VERSION}-macos.zip" \
+            --pattern "Tossinger-${VERSION}-macos.notarization.txt" \
+            --dir build \
+            --clobber
+
+          if [ ! -f "build/Tossinger-${VERSION}-macos.zip" ]; then
+            echo "::error::Release asset Tossinger-${VERSION}-macos.zip not found"
+            exit 1
+          fi
+          if [ ! -f "build/Tossinger-${VERSION}-macos.notarization.txt" ]; then
+            echo "::error::Notarization submission ID file not found in release. The release was created before non-blocking notarization was added — staple manually."
+            exit 1
+          fi
+
+      - name: Wait for notarization
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          SUBMISSION_ID=$(tr -d '[:space:]' < "build/Tossinger-${VERSION}-macos.notarization.txt")
+          if [ -z "${SUBMISSION_ID}" ]; then
+            echo "::error::Notarization file is empty"
+            exit 1
+          fi
+          echo "Submission ID: ${SUBMISSION_ID}"
+          echo "SUBMISSION_ID=${SUBMISSION_ID}" >> "$GITHUB_ENV"
+
+          KEY_PATH="${RUNNER_TEMP}/notary_key.p8"
+          echo "${ASC_PRIVATE_KEY}" | base64 --decode > "${KEY_PATH}"
+          echo "KEY_PATH=${KEY_PATH}" >> "$GITHUB_ENV"
+
+          NOTARY_ARGS=(
+            --key "${KEY_PATH}"
+            --key-id "${ASC_KEY_ID}"
+            --issuer "${ASC_ISSUER_ID}"
+          )
+
+          # Poll for up to 90 minutes — by then submissions are either resolved or genuinely broken.
+          TIMEOUT=5400
+          INTERVAL=60
+          ELAPSED=0
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            STATUS_OUT=$(xcrun notarytool info "${SUBMISSION_ID}" "${NOTARY_ARGS[@]}" 2>&1)
+            STATUS=$(echo "${STATUS_OUT}" | grep -i "status:" | head -1 | awk '{print $NF}')
+            echo "[${ELAPSED}s] Notarization status: ${STATUS}"
+
+            case "${STATUS}" in
+              Accepted)
+                echo "Notarization accepted."
+                exit 0
+                ;;
+              Invalid|Rejected)
+                echo "::error::Notarization failed with status: ${STATUS}"
+                xcrun notarytool log "${SUBMISSION_ID}" "${NOTARY_ARGS[@]}" 2>&1 || true
+                exit 1
+                ;;
+            esac
+
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+
+          echo "::error::Notarization still In Progress after ${TIMEOUT}s. Try again later or contact Apple Developer Support."
+          exit 1
+
+      - name: Staple and repackage
+        shell: bash
+        run: |
+          WORK="${RUNNER_TEMP}/staple-work"
+          rm -rf "${WORK}"
+          mkdir -p "${WORK}"
+
+          ditto -x -k "build/Tossinger-${VERSION}-macos.zip" "${WORK}"
+
+          APP_PATH="${WORK}/Tossinger.app"
+          if [ ! -d "${APP_PATH}" ]; then
+            echo "::error::Tossinger.app not found at expected path inside the release zip"
+            ls -la "${WORK}"
+            exit 1
+          fi
+
+          xcrun stapler staple "${APP_PATH}"
+          xcrun stapler validate "${APP_PATH}"
+
+          ZIP_PATH="build/Tossinger-${VERSION}-macos.zip"
+          rm -f "${ZIP_PATH}"
+          ditto -c -k --sequesterRsrc --keepParent "${APP_PATH}" "${ZIP_PATH}"
+
+          SHA256="$(shasum -a 256 "${ZIP_PATH}" | awk '{print $1}')"
+          SHA_PATH="build/Tossinger-${VERSION}-macos.sha256.txt"
+          printf "%s  %s\n" "${SHA256}" "$(basename "${ZIP_PATH}")" > "${SHA_PATH}"
+
+          echo "ZIP_PATH=${ZIP_PATH}" >> "$GITHUB_ENV"
+          echo "SHA_PATH=${SHA_PATH}" >> "$GITHUB_ENV"
+          echo "SHA256=${SHA256}" >> "$GITHUB_ENV"
+
+      - name: Re-upload release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "v${VERSION}" \
+            "${ZIP_PATH}" \
+            "${SHA_PATH}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --clobber
+
+      - name: Update Homebrew tap
+        shell: bash
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          DOWNLOAD_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}/Tossinger-${VERSION}-macos.zip"
+
+          TAP_DIR="${RUNNER_TEMP}/homebrew-tap"
+          rm -rf "${TAP_DIR}"
+          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/pseudobun/homebrew-tap.git" "${TAP_DIR}"
+          mkdir -p "${TAP_DIR}/Casks"
+
+          cat > "${TAP_DIR}/Casks/tossinger.rb" <<CASK_EOF
+          cask "tossinger" do
+            version "${VERSION}"
+            sha256 "${SHA256}"
+
+            url "${DOWNLOAD_URL}"
+            name "Tossinger"
+            desc "Save links and selected text for later"
+            homepage "https://github.com/pseudobun/tossinger"
+
+            depends_on macos: ">= :sequoia"
+
+            app "Tossinger.app"
+
+            zap trash: [
+              "~/Library/Application Support/lutra-labs.toss",
+              "~/Library/Preferences/lutra-labs.toss.plist",
+              "~/Library/Caches/lutra-labs.toss",
+            ]
+          end
+          CASK_EOF
+
+          cd "${TAP_DIR}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/tossinger.rb
+          git diff --cached --quiet || git commit -m "tossinger ${VERSION} (stapled)"
+          git push
