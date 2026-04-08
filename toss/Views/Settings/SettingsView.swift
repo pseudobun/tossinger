@@ -118,7 +118,7 @@ struct SettingsView: View {
               }
               .buttonStyle(.link)
             } header: {
-              Text("Global Shortcut")
+              Text("Global Shortcut (Experimental)")
             }
 
             Section {

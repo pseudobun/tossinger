@@ -379,7 +379,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Tossinger;
 				INFOPLIST_KEY_CFBundleName = Tossinger;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSAccessibilityUsageDescription = "Tossinger needs Accessibility access to capture selected text from other apps when you use the global shortcut.";
+				INFOPLIST_KEY_NSAccessibilityUsageDescription = "Tossinger needs Accessibility access to capture selected text from other apps when you use the global shortcut (experimental).";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "We use biometrics to secure your app access";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -445,7 +445,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Tossinger;
 				INFOPLIST_KEY_CFBundleName = Tossinger;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSAccessibilityUsageDescription = "Tossinger needs Accessibility access to capture selected text from other apps when you use the global shortcut.";
+				INFOPLIST_KEY_NSAccessibilityUsageDescription = "Tossinger needs Accessibility access to capture selected text from other apps when you use the global shortcut (experimental).";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "We use biometrics to secure your app access";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
