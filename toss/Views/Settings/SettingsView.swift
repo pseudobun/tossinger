@@ -100,15 +100,15 @@ struct SettingsView: View {
 
               HStack(spacing: 8) {
                 Circle()
-                  .fill(hasAccessibilityPermission ? Color.green : Color.orange)
+                  .fill(hasAccessibilityPermission ? Color.green : Color.red)
                   .frame(width: 8, height: 8)
 
-                Text(hasAccessibilityPermission ? "Accessibility permission granted" : "Accessibility permission required")
+                Text("Accessibility permission")
                   .font(.caption)
                   .foregroundStyle(.secondary)
               }
 
-              Button(hasAccessibilityPermission ? "Permission Granted" : "Request Accessibility Permission") {
+              Button("Request Permission") {
                 requestAccessibilityPermission()
               }
               .disabled(hasAccessibilityPermission)
