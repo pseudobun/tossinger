@@ -9,8 +9,6 @@
 /* Begin PBXBuildFile section */
 		9661E16A2E96CCBE0038A884 /* tossShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9661E1602E96CCBE0038A884 /* tossShare.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		969698B22E9562F600A7C3F5 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 969698B12E9562F600A7C3F5 /* MarkdownUI */; };
-		96DE25D42EB38D4A001716AE /* TossIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 96DE25D32EB38D4A001716AE /* TossIcon.icon */; };
-		96DE25D52EB38D4A001716AE /* TossIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 96DE25D32EB38D4A001716AE /* TossIcon.icon */; };
 		96DE25DB2EB39CD1001716AE /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96DE25DA2EB39CD1001716AE /* CloudKit.framework */; };
 		97A1F0012F0F000100000001 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 97A1F0002F0F000100000001 /* KeyboardShortcuts */; };
 /* End PBXBuildFile section */
@@ -41,7 +39,6 @@
 
 /* Begin PBXFileReference section */
 		9661E1602E96CCBE0038A884 /* tossShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = tossShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		96DE25D32EB38D4A001716AE /* TossIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = TossIcon.icon; sourceTree = "<group>"; };
 		96DE25DA2EB39CD1001716AE /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/CloudKit.framework; sourceTree = DEVELOPER_DIR; };
 		96FF21B42E9539930035FF62 /* Tossinger.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tossinger.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -130,7 +127,6 @@
 				96FF21B62E9539930035FF62 /* toss */,
 				9661E1612E96CCBE0038A884 /* tossShare */,
 				96FF21B52E9539930035FF62 /* Products */,
-				96DE25D32EB38D4A001716AE /* TossIcon.icon */,
 				96DE25D92EB39CD0001716AE /* Frameworks */,
 			);
 			sourceTree = "<group>";
@@ -242,7 +238,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				96DE25D52EB38D4A001716AE /* TossIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -250,7 +245,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				96DE25D42EB38D4A001716AE /* TossIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
