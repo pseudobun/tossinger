@@ -80,7 +80,7 @@
       }
       didRequestAccessibilityPromptThisSession = false
 
-      guard let selectedText = SelectedTextCapture.selectedText(promptForPermission: false) else {
+      guard let selectedText = await SelectedTextCapture.selectedText(promptForPermission: false) else {
         lastErrorMessage = "Unable to read selected text. Check Accessibility permissions."
         return
       }
