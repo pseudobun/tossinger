@@ -98,18 +98,33 @@ jobs:
       - name: Prepare sanitized entitlements
         shell: bash
         run: |
-          # Substitute $(CFBundleIdentifier) and strip aps-environment.
-          # The provisioning profile authorizes production APS but the source
-          # entitlements file declares development; codesign requires the
-          # signed entitlements to be a subset of what the profile allows.
-          # We are not using APNs on the macOS Homebrew distribution, so
-          # dropping the key entirely is the simplest correct fix.
+          # Build a release entitlements file that matches what the embedded
+          # Developer ID provisioning profile authorizes. amfi requires that:
+          #   1. The signed entitlements form a subset of the profile's.
+          #   2. The signed entitlements include com.apple.application-identifier
+          #      and com.apple.developer.team-identifier so the system can match
+          #      the embedded profile to the binary. Without these, restricted
+          #      entitlements (CloudKit, app groups) have no profile backing and
+          #      the process is killed at exec with "Code Signature Invalid".
           SANITIZED="${RUNNER_TEMP}/toss-release.entitlements"
           cp toss/toss.entitlements "${SANITIZED}"
+
+          # Strip aps-environment: the source file declares "development" but
+          # the Developer ID profile authorizes "production"; signed entitlements
+          # must be a subset of the profile and we don't use APNs on macOS.
           /usr/libexec/PlistBuddy -c "Delete :aps-environment" "${SANITIZED}" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Delete :com.apple.developer.aps-environment" "${SANITIZED}" 2>/dev/null || true
-          # Substitute build variables that codesign cannot expand on its own.
+
+          # Substitute $(CFBundleIdentifier) which xcodebuild expands at build
+          # time but bare codesign does not.
           /usr/bin/sed -i '' 's|iCloud\.\$(CFBundleIdentifier)|iCloud.lutra-labs.toss|g' "${SANITIZED}"
+
+          # Inject the binding entitlements that Xcode normally adds from the
+          # embedded profile. Hardcoded because these are stable for this app.
+          /usr/libexec/PlistBuddy -c "Add :com.apple.application-identifier string RFY9T5P84M.lutra-labs.toss" "${SANITIZED}"
+          /usr/libexec/PlistBuddy -c "Add :com.apple.developer.team-identifier string RFY9T5P84M" "${SANITIZED}"
+          /usr/libexec/PlistBuddy -c "Add :com.apple.developer.icloud-container-environment string Production" "${SANITIZED}"
+
           echo "--- Sanitized entitlements ---"
           cat "${SANITIZED}"
           echo "ENTITLEMENTS_PATH=${SANITIZED}" >> "$GITHUB_ENV"
@@ -117,12 +132,14 @@ jobs:
       - name: Codesign with hardened runtime
         shell: bash
         run: |
+          # No --deep: there is no nested code in the bundle, and Apple DTS
+          # explicitly recommends against --deep when entitlements are involved.
           codesign \
-            --force --deep --options runtime --timestamp \
+            --force --options runtime --timestamp \
             --entitlements "${ENTITLEMENTS_PATH}" \
             --sign "${{ secrets.MACOS_DEVELOPER_ID_APP_CERT }}" \
             "${APP_PATH}"
-          codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
+          codesign --verify --strict --verbose=2 "${APP_PATH}"
           codesign --display --entitlements :- "${APP_PATH}"
 
       - name: Notarize (non-blocking) and opportunistically staple
