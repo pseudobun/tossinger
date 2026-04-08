@@ -74,8 +74,6 @@ jobs:
             -derivedDataPath build/derived \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            ASSETCATALOG_COMPILER_APPICON_NAME= \
-            ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS=NO \
             build
 
           APP_PATH="build/derived/Build/Products/Release/Tossinger.app"
@@ -90,9 +88,11 @@ jobs:
         run: |
           codesign \
             --force --deep --options runtime --timestamp \
+            --entitlements toss/toss.entitlements \
             --sign "${{ secrets.MACOS_DEVELOPER_ID_APP_CERT }}" \
             "${APP_PATH}"
           codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
+          codesign --display --entitlements :- "${APP_PATH}"
 
       - name: Notarize (non-blocking) and opportunistically staple
         shell: bash

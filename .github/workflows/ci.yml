@@ -38,8 +38,6 @@ jobs:
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            ASSETCATALOG_COMPILER_APPICON_NAME= \
-            ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS=NO \
             build \
             2>&1 | tee /tmp/xcodebuild-macos.log
 
