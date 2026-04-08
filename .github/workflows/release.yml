@@ -94,6 +94,13 @@ jobs:
           fi
           echo "${MACOS_PROVISIONING_PROFILE_BASE64}" | base64 --decode > "${APP_PATH}/Contents/embedded.provisionprofile"
           ls -la "${APP_PATH}/Contents/embedded.provisionprofile"
+          # Verify the embedded profile authorizes the cert that will sign the binary.
+          # If these get out of sync, amfi kills the binary at exec with
+          # "Code Signature Invalid" even though codesign --verify passes.
+          security cms -D -i "${APP_PATH}/Contents/embedded.provisionprofile" 2>/dev/null \
+            | plutil -extract DeveloperCertificates.0 raw -o - - \
+            | base64 --decode \
+            | openssl x509 -inform DER -noout -subject -serial
 
       - name: Prepare sanitized entitlements
         shell: bash
