@@ -14,6 +14,7 @@
 		96F87C1C2F87A911000C696B /* TossKit in Frameworks */ = {isa = PBXBuildFile; productRef = 96F87C1B2F87A911000C696B /* TossKit */; };
 		96F87C1E2F87A916000C696B /* TossKit in Frameworks */ = {isa = PBXBuildFile; productRef = 96F87C1D2F87A916000C696B /* TossKit */; };
 		96F87C202F87A91C000C696B /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 96F87C1F2F87A91C000C696B /* ArgumentParser */; };
+		96F87C302F87B000000C696B /* toss.app in Embed CLI Helper */ = {isa = PBXBuildFile; fileRef = 96F87C002F879E7D000C696B /* toss.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		97A1F0012F0F000100000001 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 97A1F0002F0F000100000001 /* KeyboardShortcuts */; };
 /* End PBXBuildFile section */
 
@@ -24,6 +25,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 9661E15F2E96CCBE0038A884;
 			remoteInfo = tossShare;
+		};
+		96F87C312F87B000000C696B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96FF21AC2E9539930035FF62 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 96F87BFF2F879E7D000C696B;
+			remoteInfo = tossinger;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -37,6 +45,17 @@
 				9661E16A2E96CCBE0038A884 /* tossShare.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		96F87C322F87B000000C696B /* Embed CLI Helper */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "Contents/Helpers";
+			dstSubfolderSpec = 1;
+			files = (
+				96F87C302F87B000000C696B /* toss.app in Embed CLI Helper */,
+			);
+			name = "Embed CLI Helper";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		96F87BFE2F879E7D000C696B /* CopyFiles */ = {
@@ -53,7 +72,7 @@
 /* Begin PBXFileReference section */
 		9661E1602E96CCBE0038A884 /* tossShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = tossShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		96DE25DA2EB39CD1001716AE /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/CloudKit.framework; sourceTree = DEVELOPER_DIR; };
-		96F87C002F879E7D000C696B /* toss */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = toss; sourceTree = BUILT_PRODUCTS_DIR; };
+		96F87C002F879E7D000C696B /* toss.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = toss.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		96FF21B42E9539930035FF62 /* Tossinger.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tossinger.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -166,7 +185,7 @@
 			children = (
 				96FF21B42E9539930035FF62 /* Tossinger.app */,
 				9661E1602E96CCBE0038A884 /* tossShare.appex */,
-				96F87C002F879E7D000C696B /* toss */,
+				96F87C002F879E7D000C696B /* toss.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -218,8 +237,8 @@
 				96F87C1F2F87A91C000C696B /* ArgumentParser */,
 			);
 			productName = tossinger;
-			productReference = 96F87C002F879E7D000C696B /* toss */;
-			productType = "com.apple.product-type.tool";
+			productReference = 96F87C002F879E7D000C696B /* toss.app */;
+			productType = "com.apple.product-type.application";
 		};
 		96FF21B32E9539930035FF62 /* toss */ = {
 			isa = PBXNativeTarget;
@@ -228,12 +247,14 @@
 				96FF21B02E9539930035FF62 /* Sources */,
 				96FF21B12E9539930035FF62 /* Frameworks */,
 				96FF21B22E9539930035FF62 /* Resources */,
+				96F87C322F87B000000C696B /* Embed CLI Helper */,
 				9661E16F2E96CCBE0038A884 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				9661E1692E96CCBE0038A884 /* PBXTargetDependency */,
+				96F87C332F87B000000C696B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				96FF21B62E9539930035FF62 /* toss */,
@@ -344,6 +365,12 @@
 			target = 9661E15F2E96CCBE0038A884 /* tossShare */;
 			targetProxy = 9661E1682E96CCBE0038A884 /* PBXContainerItemProxy */;
 		};
+		96F87C332F87B000000C696B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilter = macos;
+			target = 96F87BFF2F879E7D000C696B /* tossinger */;
+			targetProxy = 96F87C312F87B000000C696B /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -418,14 +445,24 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = tossinger/tossinger.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = RFY9T5P84M;
 				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = tossinger/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "lutra-labs.tossinger";
+				MARKETING_VERSION = 1.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "lutra-labs.toss.cli";
 				PRODUCT_NAME = toss;
 				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -436,16 +473,27 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = tossinger/tossinger.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = RFY9T5P84M;
 				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = tossinger/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "lutra-labs.tossinger";
+				MARKETING_VERSION = 1.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "lutra-labs.toss.cli";
 				PRODUCT_NAME = toss;
 				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
