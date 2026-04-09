@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/pseudobun/tossinger/compare/v1.2.0...v1.3.0) (2026-04-09)
+
+
+### Features
+
+* **app:** force-update gate with remote-toggled blocking screen ([#14](https://github.com/pseudobun/tossinger/issues/14)) ([32bb4ab](https://github.com/pseudobun/tossinger/commit/32bb4abc9ae86e2975fa0d91994e0e7d68e2917b))
+
 ## [1.2.0](https://github.com/pseudobun/tossinger/compare/v1.1.1...v1.2.0) (2026-04-09)
 
 
