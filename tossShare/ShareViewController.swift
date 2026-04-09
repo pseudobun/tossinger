@@ -8,6 +8,7 @@
 import ImageIO
 import Social
 import SwiftData
+import TossKit
 import UIKit
 import UniformTypeIdentifiers
 
@@ -23,8 +24,6 @@ final class ShareViewController: UIViewController {
     let kind: PayloadKind
   }
 
-  private static let cloudKitContainerIdentifier = "iCloud.lutra-labs.toss"
-  private static let appGroupIdentifier = "group.lutra-labs.toss"
   private static let metadataEnrichmentBudget: TimeInterval = 1.5
 
   private var container: ModelContainer?
@@ -72,28 +71,7 @@ final class ShareViewController: UIViewController {
   @discardableResult
   private func setupModelContainer() -> Bool {
     do {
-      let schema = Schema([Toss.self])
-
-      guard
-        let containerURL = FileManager.default.containerURL(
-          forSecurityApplicationGroupIdentifier:
-            Self.appGroupIdentifier
-        )
-      else {
-        return false
-      }
-
-      let storeURL = containerURL.appendingPathComponent("default.store")
-
-      let configuration = ModelConfiguration(
-        url: storeURL,
-        cloudKitDatabase: .private(Self.cloudKitContainerIdentifier)
-      )
-
-      container = try ModelContainer(
-        for: schema,
-        configurations: [configuration]
-      )
+      container = try TossPersistenceStack.makeContainer()
       return true
     } catch {
       return false

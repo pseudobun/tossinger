@@ -7,6 +7,7 @@
 
 import SwiftData
 import SwiftUI
+import TossKit
 
 @main
 struct tossApp: App {
@@ -17,32 +18,11 @@ struct tossApp: App {
   #endif
   @Environment(\.scenePhase) private var scenePhase
   private let backfillMigration = TossBackfillMigration()
+  private let uuidMigration = TossUUIDMigration()
 
   init() {
     do {
-      let schema = Schema([Toss.self])
-
-      // Get the shared container URL
-      guard
-        let containerURL = FileManager.default.containerURL(
-          forSecurityApplicationGroupIdentifier:
-            "group.lutra-labs.toss"
-        )
-      else {
-        fatalError("Shared container not found")
-      }
-
-      let storeURL = containerURL.appendingPathComponent("default.store")
-
-      let configuration = ModelConfiguration(
-        url: storeURL,
-        cloudKitDatabase: .private("iCloud.lutra-labs.toss")
-      )
-
-      container = try ModelContainer(
-        for: schema,
-        configurations: [configuration]
-      )
+      container = try TossPersistenceStack.makeContainer()
     } catch {
       fatalError("Failed to configure ModelContainer: \(error)")
     }
@@ -54,6 +34,7 @@ struct tossApp: App {
         .environmentObject(appSettings)
         .tint(Color.accentColor)  // Apply accent color globally
         .onAppear {
+          uuidMigration.startIfNeeded(modelContainer: container)
           backfillMigration.startIfNeeded(modelContainer: container)
           #if os(macOS)
             macGlobalShortcutController.configureIfNeeded(modelContainer: container)
@@ -71,8 +52,10 @@ struct tossApp: App {
         .onChange(of: scenePhase) { _, newPhase in
           switch newPhase {
           case .active:
+            uuidMigration.startIfNeeded(modelContainer: container)
             backfillMigration.startIfNeeded(modelContainer: container)
           case .inactive, .background:
+            uuidMigration.cancel()
             backfillMigration.cancel()
           @unknown default:
             break

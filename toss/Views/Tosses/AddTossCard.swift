@@ -9,6 +9,7 @@
 import ImageIO
 import SwiftData
 import SwiftUI
+import TossKit
 
 struct AddTossCard: View {
   @Environment(\.modelContext) private var modelContext

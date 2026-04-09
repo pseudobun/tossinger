@@ -10,6 +10,11 @@
 		9661E16A2E96CCBE0038A884 /* tossShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9661E1602E96CCBE0038A884 /* tossShare.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		969698B22E9562F600A7C3F5 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 969698B12E9562F600A7C3F5 /* MarkdownUI */; };
 		96DE25DB2EB39CD1001716AE /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96DE25DA2EB39CD1001716AE /* CloudKit.framework */; };
+		96F87C192F87A813000C696B /* TossKit in Frameworks */ = {isa = PBXBuildFile; productRef = 96F87C182F87A813000C696B /* TossKit */; };
+		96F87C1C2F87A911000C696B /* TossKit in Frameworks */ = {isa = PBXBuildFile; productRef = 96F87C1B2F87A911000C696B /* TossKit */; };
+		96F87C1E2F87A916000C696B /* TossKit in Frameworks */ = {isa = PBXBuildFile; productRef = 96F87C1D2F87A916000C696B /* TossKit */; };
+		96F87C202F87A91C000C696B /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 96F87C1F2F87A91C000C696B /* ArgumentParser */; };
+		96F87C302F87B000000C696B /* toss.app in Embed CLI Helper */ = {isa = PBXBuildFile; fileRef = 96F87C002F879E7D000C696B /* toss.app */; platformFilters = (macos, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		97A1F0012F0F000100000001 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 97A1F0002F0F000100000001 /* KeyboardShortcuts */; };
 /* End PBXBuildFile section */
 
@@ -20,6 +25,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 9661E15F2E96CCBE0038A884;
 			remoteInfo = tossShare;
+		};
+		96F87C312F87B000000C696B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96FF21AC2E9539930035FF62 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 96F87BFF2F879E7D000C696B;
+			remoteInfo = tossinger;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -35,11 +47,32 @@
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		96F87BFE2F879E7D000C696B /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		96F87C322F87B000000C696B /* Embed CLI Helper */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Helpers;
+			dstSubfolderSpec = 1;
+			files = (
+				96F87C302F87B000000C696B /* toss.app in Embed CLI Helper */,
+			);
+			name = "Embed CLI Helper";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		9661E1602E96CCBE0038A884 /* tossShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = tossShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		96DE25DA2EB39CD1001716AE /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/CloudKit.framework; sourceTree = DEVELOPER_DIR; };
+		96F87C002F879E7D000C696B /* toss.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = toss.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		96FF21B42E9539930035FF62 /* Tossinger.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tossinger.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -54,7 +87,6 @@
 		9661E1722E96CE1C0038A884 /* Exceptions for "toss" folder in "tossShare" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Models/Toss.swift,
 				Services/GenericWebsiteMetadataFetcher.swift,
 				Services/MetadataCoordinator.swift,
 				Services/ScreenshotCapturer.swift,
@@ -81,6 +113,11 @@
 			path = tossShare;
 			sourceTree = "<group>";
 		};
+		96F87C012F879E7D000C696B /* tossinger */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = tossinger;
+			sourceTree = "<group>";
+		};
 		96FF21B62E9539930035FF62 /* toss */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -97,6 +134,16 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				96F87C1C2F87A911000C696B /* TossKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		96F87BFD2F879E7D000C696B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				96F87C202F87A91C000C696B /* ArgumentParser in Frameworks */,
+				96F87C1E2F87A916000C696B /* TossKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -104,6 +151,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				96F87C192F87A813000C696B /* TossKit in Frameworks */,
 				97A1F0012F0F000100000001 /* KeyboardShortcuts in Frameworks */,
 				969698B22E9562F600A7C3F5 /* MarkdownUI in Frameworks */,
 				96DE25DB2EB39CD1001716AE /* CloudKit.framework in Frameworks */,
@@ -126,6 +174,7 @@
 			children = (
 				96FF21B62E9539930035FF62 /* toss */,
 				9661E1612E96CCBE0038A884 /* tossShare */,
+				96F87C012F879E7D000C696B /* tossinger */,
 				96FF21B52E9539930035FF62 /* Products */,
 				96DE25D92EB39CD0001716AE /* Frameworks */,
 			);
@@ -136,6 +185,7 @@
 			children = (
 				96FF21B42E9539930035FF62 /* Tossinger.app */,
 				9661E1602E96CCBE0038A884 /* tossShare.appex */,
+				96F87C002F879E7D000C696B /* toss.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -160,10 +210,35 @@
 			);
 			name = tossShare;
 			packageProductDependencies = (
+				96F87C1B2F87A911000C696B /* TossKit */,
 			);
 			productName = tossShare;
 			productReference = 9661E1602E96CCBE0038A884 /* tossShare.appex */;
 			productType = "com.apple.product-type.app-extension";
+		};
+		96F87BFF2F879E7D000C696B /* tossinger */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 96F87C062F879E7D000C696B /* Build configuration list for PBXNativeTarget "tossinger" */;
+			buildPhases = (
+				96F87BFC2F879E7D000C696B /* Sources */,
+				96F87BFD2F879E7D000C696B /* Frameworks */,
+				96F87BFE2F879E7D000C696B /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				96F87C012F879E7D000C696B /* tossinger */,
+			);
+			name = tossinger;
+			packageProductDependencies = (
+				96F87C1D2F87A916000C696B /* TossKit */,
+				96F87C1F2F87A91C000C696B /* ArgumentParser */,
+			);
+			productName = tossinger;
+			productReference = 96F87C002F879E7D000C696B /* toss.app */;
+			productType = "com.apple.product-type.application";
 		};
 		96FF21B32E9539930035FF62 /* toss */ = {
 			isa = PBXNativeTarget;
@@ -172,12 +247,14 @@
 				96FF21B02E9539930035FF62 /* Sources */,
 				96FF21B12E9539930035FF62 /* Frameworks */,
 				96FF21B22E9539930035FF62 /* Resources */,
+				96F87C322F87B000000C696B /* Embed CLI Helper */,
 				9661E16F2E96CCBE0038A884 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				9661E1692E96CCBE0038A884 /* PBXTargetDependency */,
+				96F87C332F87B000000C696B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				96FF21B62E9539930035FF62 /* toss */,
@@ -186,6 +263,7 @@
 			packageProductDependencies = (
 				969698B12E9562F600A7C3F5 /* MarkdownUI */,
 				97A1F0002F0F000100000001 /* KeyboardShortcuts */,
+				96F87C182F87A813000C696B /* TossKit */,
 			);
 			productName = toss;
 			productReference = 96FF21B42E9539930035FF62 /* Tossinger.app */;
@@ -202,6 +280,9 @@
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					9661E15F2E96CCBE0038A884 = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
+					96F87BFF2F879E7D000C696B = {
 						CreatedOnToolsVersion = 26.0.1;
 					};
 					96FF21B32E9539930035FF62 = {
@@ -221,6 +302,8 @@
 			packageReferences = (
 				969698B02E9562F600A7C3F5 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 				97A1F0022F0F000100000001 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+				96F87C172F87A813000C696B /* XCLocalSwiftPackageReference "Packages/TossKit" */,
+				96F87C1A2F87A8E1000C696B /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 96FF21B52E9539930035FF62 /* Products */;
@@ -229,6 +312,7 @@
 			targets = (
 				96FF21B32E9539930035FF62 /* toss */,
 				9661E15F2E96CCBE0038A884 /* tossShare */,
+				96F87BFF2F879E7D000C696B /* tossinger */,
 			);
 		};
 /* End PBXProject section */
@@ -258,6 +342,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		96F87BFC2F879E7D000C696B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		96FF21B02E9539930035FF62 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -273,6 +364,14 @@
 			platformFilter = ios;
 			target = 9661E15F2E96CCBE0038A884 /* tossShare */;
 			targetProxy = 9661E1682E96CCBE0038A884 /* PBXContainerItemProxy */;
+		};
+		96F87C332F87B000000C696B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilters = (
+				macos,
+			);
+			target = 96F87BFF2F879E7D000C696B /* tossinger */;
+			targetProxy = 96F87C312F87B000000C696B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -341,6 +440,63 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		96F87C042F879E7D000C696B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = tossinger/tossinger.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = RFY9T5P84M;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = tossinger/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "lutra-labs.toss.cli";
+				PRODUCT_NAME = toss;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		96F87C052F879E7D000C696B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = tossinger/tossinger.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = RFY9T5P84M;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = tossinger/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "lutra-labs.toss.cli";
+				PRODUCT_NAME = toss;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -608,6 +764,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		96F87C062F879E7D000C696B /* Build configuration list for PBXNativeTarget "tossinger" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96F87C042F879E7D000C696B /* Debug */,
+				96F87C052F879E7D000C696B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		96FF21AF2E9539930035FF62 /* Build configuration list for PBXProject "toss" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -628,6 +793,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		96F87C172F87A813000C696B /* XCLocalSwiftPackageReference "Packages/TossKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/TossKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		969698B02E9562F600A7C3F5 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -635,6 +807,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.4.1;
+			};
+		};
+		96F87C1A2F87A8E1000C696B /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.7.1;
 			};
 		};
 		97A1F0022F0F000100000001 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
@@ -652,6 +832,25 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 969698B02E9562F600A7C3F5 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
 			productName = MarkdownUI;
+		};
+		96F87C182F87A813000C696B /* TossKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TossKit;
+		};
+		96F87C1B2F87A911000C696B /* TossKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 96F87C172F87A813000C696B /* XCLocalSwiftPackageReference "Packages/TossKit" */;
+			productName = TossKit;
+		};
+		96F87C1D2F87A916000C696B /* TossKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 96F87C172F87A813000C696B /* XCLocalSwiftPackageReference "Packages/TossKit" */;
+			productName = TossKit;
+		};
+		96F87C1F2F87A91C000C696B /* ArgumentParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 96F87C1A2F87A8E1000C696B /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
+			productName = ArgumentParser;
 		};
 		97A1F0002F0F000100000001 /* KeyboardShortcuts */ = {
 			isa = XCSwiftPackageProductDependency;

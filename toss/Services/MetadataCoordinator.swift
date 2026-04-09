@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TossKit
 
 protocol MetadataFetching {
   func fetchMetadata(for url: URL, timeout: TimeInterval) async -> MetadataResult

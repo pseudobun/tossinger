@@ -2,6 +2,7 @@
   import SwiftUI
   import SwiftData
   import MarkdownUI
+  import TossKit
 
   struct TossDetailView: View {
     let toss: Toss

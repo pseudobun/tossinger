@@ -7,6 +7,7 @@
 
 import MarkdownUI
 import SwiftUI
+import TossKit
 
 struct TossCard: View {
   let toss: Toss
@@ -58,6 +59,9 @@ struct TossCard: View {
       )
       .equatable()
     }
+    .overlay(alignment: .topTrailing) {
+      TossIDBadge(id: toss.id).equatable()
+    }
   }
 
   private var textCard: some View {
@@ -71,6 +75,9 @@ struct TossCard: View {
           useLightweightText: FeatureFlags.useLightweightCardText
         )
         .equatable()
+      }
+      .overlay(alignment: .topTrailing) {
+        TossIDBadge(id: toss.id).equatable()
       }
       .background(cardBackgroundColor)
   }
@@ -268,6 +275,29 @@ private struct LoadingPlaceholder: View, Equatable {
             .foregroundStyle(.white.opacity(0.7))
         }
       }
+  }
+}
+
+private struct TossIDBadge: View, Equatable {
+  let id: UUID
+
+  private var shortID: String {
+    String(id.uuidString.prefix(8)).lowercased()
+  }
+
+  var body: some View {
+    Text(shortID)
+      .font(.system(size: 9, weight: .semibold, design: .monospaced))
+      .foregroundStyle(.white.opacity(0.85))
+      .padding(.horizontal, 6)
+      .padding(.vertical, 3)
+      .background(.black.opacity(0.55))
+      .clipShape(Capsule())
+      .padding(8)
+  }
+
+  static func == (lhs: TossIDBadge, rhs: TossIDBadge) -> Bool {
+    lhs.id == rhs.id
   }
 }
 

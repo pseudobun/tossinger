@@ -99,6 +99,63 @@ jobs:
             | base64 --decode \
             | openssl x509 -inform DER -noout -subject -serial
 
+      - name: Embed helper provisioning profile
+        shell: bash
+        env:
+          MACOS_HELPER_PROVISIONING_PROFILE_BASE64: ${{ secrets.MACOS_HELPER_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          if [ -z "${MACOS_HELPER_PROVISIONING_PROFILE_BASE64}" ]; then
+            echo "::error::MACOS_HELPER_PROVISIONING_PROFILE_BASE64 secret is not set"
+            exit 1
+          fi
+          HELPER_PATH="${APP_PATH}/Contents/Helpers/toss.app"
+          if [ ! -d "$HELPER_PATH" ]; then
+            echo "::error::Embedded helper not found at $HELPER_PATH (target dependency / Copy Files phase missing?)"
+            exit 1
+          fi
+          echo "${MACOS_HELPER_PROVISIONING_PROFILE_BASE64}" | base64 --decode > "${HELPER_PATH}/Contents/embedded.provisionprofile"
+          ls -la "${HELPER_PATH}/Contents/embedded.provisionprofile"
+          # Sanity-check that the helper profile authorizes the same cert the parent profile does.
+          security cms -D -i "${HELPER_PATH}/Contents/embedded.provisionprofile" 2>/dev/null \
+            | plutil -extract DeveloperCertificates.0 raw -o - - \
+            | base64 --decode \
+            | openssl x509 -inform DER -noout -subject -serial
+          echo "HELPER_PATH=${HELPER_PATH}" >> "$GITHUB_ENV"
+
+      - name: Prepare sanitized helper entitlements
+        shell: bash
+        run: |
+          # Mirror the same shape as the parent's sanitized entitlements: subset of
+          # what the helper's embedded provisioning profile authorizes, plus the
+          # binding entitlements (application-identifier, team-identifier, icloud
+          # environment) that codesign needs in order for amfi to validate the
+          # restricted iCloud claims at exec time.
+          HELPER_ENTITLEMENTS="${RUNNER_TEMP}/toss-cli-release.entitlements"
+          cp tossinger/tossinger.entitlements "${HELPER_ENTITLEMENTS}"
+
+          /usr/libexec/PlistBuddy -c "Add :com.apple.application-identifier string RFY9T5P84M.lutra-labs.toss.cli" "${HELPER_ENTITLEMENTS}"
+          /usr/libexec/PlistBuddy -c "Add :com.apple.developer.team-identifier string RFY9T5P84M" "${HELPER_ENTITLEMENTS}"
+          /usr/libexec/PlistBuddy -c "Add :com.apple.developer.icloud-container-environment string Production" "${HELPER_ENTITLEMENTS}"
+
+          echo "--- Sanitized helper entitlements ---"
+          cat "${HELPER_ENTITLEMENTS}"
+          echo "HELPER_ENTITLEMENTS_PATH=${HELPER_ENTITLEMENTS}" >> "$GITHUB_ENV"
+
+      - name: Codesign helper with hardened runtime
+        shell: bash
+        run: |
+          # Inside-out signing: the helper must be signed before the parent so the
+          # parent codesign can validate the nested signature. Same Developer ID
+          # Application cert as the parent, but different bundle id, different
+          # provisioning profile, different application-identifier entitlement.
+          codesign \
+            --force --options runtime --timestamp \
+            --entitlements "${HELPER_ENTITLEMENTS_PATH}" \
+            --sign "${{ secrets.MACOS_DEVELOPER_ID_APP_CERT }}" \
+            "${HELPER_PATH}"
+          codesign --verify --strict --verbose=2 "${HELPER_PATH}"
+          codesign --display --entitlements :- "${HELPER_PATH}"
+
       - name: Prepare sanitized entitlements
         shell: bash
         run: |
@@ -136,7 +193,9 @@ jobs:
       - name: Codesign with hardened runtime
         shell: bash
         run: |
-          # No --deep: there is no nested code in the bundle, and Apple DTS
+          # No --deep: the embedded helper at Contents/Helpers/toss.app is already
+          # signed with its own entitlements + provisioning profile by the
+          # "Codesign helper with hardened runtime" step above, and Apple DTS
           # explicitly recommends against --deep when entitlements are involved.
           codesign \
             --force --options runtime --timestamp \
@@ -145,6 +204,16 @@ jobs:
             "${APP_PATH}"
           codesign --verify --strict --verbose=2 "${APP_PATH}"
           codesign --display --entitlements :- "${APP_PATH}"
+
+      - name: Verify nested signature stack
+        shell: bash
+        run: |
+          # Walk the entire bundle (parent + helper) and confirm both signatures
+          # validate. This catches the failure mode where the helper is unsigned
+          # or the helper's entitlements got rejected at parent codesign time.
+          codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
+          # Gatekeeper assessment — same check the OS runs before launch.
+          spctl --assess --type execute --verbose "${APP_PATH}" || true
 
       - name: Notarize (non-blocking) and opportunistically staple
         shell: bash
@@ -274,6 +343,12 @@ jobs:
             depends_on macos: ">= :sequoia"
 
             app "Tossinger.app"
+
+            # CLI helper embedded inside Tossinger.app. Brew creates a symlink
+            # at \$(brew --prefix)/bin/toss so users can run \`toss list/add/delete\`
+            # from any terminal.
+            binary "#{appdir}/Tossinger.app/Contents/Helpers/toss.app/Contents/MacOS/toss",
+                   target: "toss"
 
             zap trash: [
               "~/Library/Application Support/lutra-labs.toss",

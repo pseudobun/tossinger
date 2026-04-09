@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import TossKit
 
 @MainActor
 final class TossesViewModel: ObservableObject {
