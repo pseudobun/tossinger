@@ -13,6 +13,7 @@ import TossKit
 struct tossApp: App {
   var container: ModelContainer
   @StateObject private var appSettings = AppSettings()
+  @StateObject private var updateGate = UpdateGateService()
   #if os(macOS)
     @StateObject private var macGlobalShortcutController = MacGlobalShortcutController()
   #endif
@@ -30,8 +31,15 @@ struct tossApp: App {
 
   var body: some Scene {
     WindowGroup {
-      AuthenticationView()
+      Group {
+        if updateGate.requiresUpdate {
+          ForceUpdateView(message: updateGate.updateMessage)
+        } else {
+          AuthenticationView()
+        }
+      }
         .environmentObject(appSettings)
+        .environmentObject(updateGate)
         .tint(Color.accentColor)  // Apply accent color globally
         .onAppear {
           uuidMigration.startIfNeeded(modelContainer: container)
@@ -43,6 +51,8 @@ struct tossApp: App {
           Task(priority: .utility) {
             await TossCreationPipeline.retryPendingMetadata(modelContainer: container)
           }
+
+          Task { await updateGate.checkForRequiredUpdate() }
 
           // Register for remote notifications on iOS
           #if os(iOS)

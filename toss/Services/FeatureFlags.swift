@@ -15,6 +15,13 @@ enum FeatureFlags {
     value(for: "UseMetadataTimeoutPolicy", default: true)
   }
 
+  /// Local-only escape hatch for the force-update gate. When true, the gate
+  /// triggers regardless of remote config or installed version. Flip via:
+  ///   defaults write lutra-labs.toss ForceUpdateOverride -bool YES
+  static var forceUpdateOverride: Bool {
+    value(for: "ForceUpdateOverride", default: false)
+  }
+
   private static func value(for key: String, default defaultValue: Bool) -> Bool {
     guard defaults.object(forKey: key) != nil else {
       return defaultValue
