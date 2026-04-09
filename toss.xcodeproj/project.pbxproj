@@ -10,6 +10,10 @@
 		9661E16A2E96CCBE0038A884 /* tossShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9661E1602E96CCBE0038A884 /* tossShare.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		969698B22E9562F600A7C3F5 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 969698B12E9562F600A7C3F5 /* MarkdownUI */; };
 		96DE25DB2EB39CD1001716AE /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96DE25DA2EB39CD1001716AE /* CloudKit.framework */; };
+		96F87C192F87A813000C696B /* TossKit in Frameworks */ = {isa = PBXBuildFile; productRef = 96F87C182F87A813000C696B /* TossKit */; };
+		96F87C1C2F87A911000C696B /* TossKit in Frameworks */ = {isa = PBXBuildFile; productRef = 96F87C1B2F87A911000C696B /* TossKit */; };
+		96F87C1E2F87A916000C696B /* TossKit in Frameworks */ = {isa = PBXBuildFile; productRef = 96F87C1D2F87A916000C696B /* TossKit */; };
+		96F87C202F87A91C000C696B /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 96F87C1F2F87A91C000C696B /* ArgumentParser */; };
 		97A1F0012F0F000100000001 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 97A1F0002F0F000100000001 /* KeyboardShortcuts */; };
 /* End PBXBuildFile section */
 
@@ -111,6 +115,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				96F87C1C2F87A911000C696B /* TossKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -118,6 +123,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				96F87C202F87A91C000C696B /* ArgumentParser in Frameworks */,
+				96F87C1E2F87A916000C696B /* TossKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +132,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				96F87C192F87A813000C696B /* TossKit in Frameworks */,
 				97A1F0012F0F000100000001 /* KeyboardShortcuts in Frameworks */,
 				969698B22E9562F600A7C3F5 /* MarkdownUI in Frameworks */,
 				96DE25DB2EB39CD1001716AE /* CloudKit.framework in Frameworks */,
@@ -183,6 +191,7 @@
 			);
 			name = tossShare;
 			packageProductDependencies = (
+				96F87C1B2F87A911000C696B /* TossKit */,
 			);
 			productName = tossShare;
 			productReference = 9661E1602E96CCBE0038A884 /* tossShare.appex */;
@@ -205,6 +214,8 @@
 			);
 			name = tossinger;
 			packageProductDependencies = (
+				96F87C1D2F87A916000C696B /* TossKit */,
+				96F87C1F2F87A91C000C696B /* ArgumentParser */,
 			);
 			productName = tossinger;
 			productReference = 96F87C002F879E7D000C696B /* toss */;
@@ -231,6 +242,7 @@
 			packageProductDependencies = (
 				969698B12E9562F600A7C3F5 /* MarkdownUI */,
 				97A1F0002F0F000100000001 /* KeyboardShortcuts */,
+				96F87C182F87A813000C696B /* TossKit */,
 			);
 			productName = toss;
 			productReference = 96FF21B42E9539930035FF62 /* Tossinger.app */;
@@ -269,6 +281,8 @@
 			packageReferences = (
 				969698B02E9562F600A7C3F5 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 				97A1F0022F0F000100000001 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+				96F87C172F87A813000C696B /* XCLocalSwiftPackageReference "Packages/TossKit" */,
+				96F87C1A2F87A8E1000C696B /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 96FF21B52E9539930035FF62 /* Products */;
@@ -403,10 +417,13 @@
 		96F87C042F879E7D000C696B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = tossinger/tossinger.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = RFY9T5P84M;
 				ENABLE_HARDENED_RUNTIME = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "lutra-labs.tossinger";
 				PRODUCT_NAME = toss;
 				SDKROOT = macosx;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -418,10 +435,13 @@
 		96F87C052F879E7D000C696B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = tossinger/tossinger.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = RFY9T5P84M;
 				ENABLE_HARDENED_RUNTIME = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "lutra-labs.tossinger";
 				PRODUCT_NAME = toss;
 				SDKROOT = macosx;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -723,6 +743,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		96F87C172F87A813000C696B /* XCLocalSwiftPackageReference "Packages/TossKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/TossKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		969698B02E9562F600A7C3F5 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -730,6 +757,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.4.1;
+			};
+		};
+		96F87C1A2F87A8E1000C696B /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.7.1;
 			};
 		};
 		97A1F0022F0F000100000001 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
@@ -747,6 +782,25 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 969698B02E9562F600A7C3F5 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
 			productName = MarkdownUI;
+		};
+		96F87C182F87A813000C696B /* TossKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TossKit;
+		};
+		96F87C1B2F87A911000C696B /* TossKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 96F87C172F87A813000C696B /* XCLocalSwiftPackageReference "Packages/TossKit" */;
+			productName = TossKit;
+		};
+		96F87C1D2F87A916000C696B /* TossKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 96F87C172F87A813000C696B /* XCLocalSwiftPackageReference "Packages/TossKit" */;
+			productName = TossKit;
+		};
+		96F87C1F2F87A91C000C696B /* ArgumentParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 96F87C1A2F87A8E1000C696B /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
+			productName = ArgumentParser;
 		};
 		97A1F0002F0F000100000001 /* KeyboardShortcuts */ = {
 			isa = XCSwiftPackageProductDependency;
