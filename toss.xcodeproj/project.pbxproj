@@ -47,17 +47,6 @@
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		96F87C322F87B000000C696B /* Embed CLI Helper */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "Contents/Helpers";
-			dstSubfolderSpec = 1;
-			files = (
-				96F87C302F87B000000C696B /* toss.app in Embed CLI Helper */,
-			);
-			name = "Embed CLI Helper";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		96F87BFE2F879E7D000C696B /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -66,6 +55,17 @@
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 1;
+		};
+		96F87C322F87B000000C696B /* Embed CLI Helper */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Helpers;
+			dstSubfolderSpec = 1;
+			files = (
+				96F87C302F87B000000C696B /* toss.app in Embed CLI Helper */,
+			);
+			name = "Embed CLI Helper";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -367,7 +367,6 @@
 		};
 		96F87C332F87B000000C696B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			platformFilter = macos;
 			target = 96F87BFF2F879E7D000C696B /* tossinger */;
 			targetProxy = 96F87C312F87B000000C696B /* PBXContainerItemProxy */;
 		};
@@ -492,8 +491,8 @@
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = macosx;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;

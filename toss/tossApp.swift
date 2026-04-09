@@ -18,6 +18,7 @@ struct tossApp: App {
   #endif
   @Environment(\.scenePhase) private var scenePhase
   private let backfillMigration = TossBackfillMigration()
+  private let uuidMigration = TossUUIDMigration()
 
   init() {
     do {
@@ -33,6 +34,7 @@ struct tossApp: App {
         .environmentObject(appSettings)
         .tint(Color.accentColor)  // Apply accent color globally
         .onAppear {
+          uuidMigration.startIfNeeded(modelContainer: container)
           backfillMigration.startIfNeeded(modelContainer: container)
           #if os(macOS)
             macGlobalShortcutController.configureIfNeeded(modelContainer: container)
@@ -50,8 +52,10 @@ struct tossApp: App {
         .onChange(of: scenePhase) { _, newPhase in
           switch newPhase {
           case .active:
+            uuidMigration.startIfNeeded(modelContainer: container)
             backfillMigration.startIfNeeded(modelContainer: container)
           case .inactive, .background:
+            uuidMigration.cancel()
             backfillMigration.cancel()
           @unknown default:
             break
