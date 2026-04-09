@@ -14,7 +14,7 @@
 		96F87C1C2F87A911000C696B /* TossKit in Frameworks */ = {isa = PBXBuildFile; productRef = 96F87C1B2F87A911000C696B /* TossKit */; };
 		96F87C1E2F87A916000C696B /* TossKit in Frameworks */ = {isa = PBXBuildFile; productRef = 96F87C1D2F87A916000C696B /* TossKit */; };
 		96F87C202F87A91C000C696B /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 96F87C1F2F87A91C000C696B /* ArgumentParser */; };
-		96F87C302F87B000000C696B /* toss.app in Embed CLI Helper */ = {isa = PBXBuildFile; fileRef = 96F87C002F879E7D000C696B /* toss.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		96F87C302F87B000000C696B /* toss.app in Embed CLI Helper */ = {isa = PBXBuildFile; fileRef = 96F87C002F879E7D000C696B /* toss.app */; platformFilters = (macos, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		97A1F0012F0F000100000001 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 97A1F0002F0F000100000001 /* KeyboardShortcuts */; };
 /* End PBXBuildFile section */
 
@@ -367,6 +367,9 @@
 		};
 		96F87C332F87B000000C696B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			platformFilters = (
+				macos,
+			);
 			target = 96F87BFF2F879E7D000C696B /* tossinger */;
 			targetProxy = 96F87C312F87B000000C696B /* PBXContainerItemProxy */;
 		};
