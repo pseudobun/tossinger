@@ -1,6 +1,7 @@
 import Foundation
 import ImageIO
 import SwiftData
+import TossKit
 
 final class TossBackfillMigration {
   private let migrationCompletionKey = "toss_backfill_v1_completed"

@@ -3,3 +3,7 @@ vendor/bundle/
 build/
 .DS_Store
 .env
+
+# Swift Package Manager build artifacts
+.build/
+.swiftpm/

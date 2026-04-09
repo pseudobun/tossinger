@@ -35,11 +35,21 @@
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		96F87BFE2F879E7D000C696B /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		9661E1602E96CCBE0038A884 /* tossShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = tossShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		96DE25DA2EB39CD1001716AE /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/CloudKit.framework; sourceTree = DEVELOPER_DIR; };
+		96F87C002F879E7D000C696B /* toss */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = toss; sourceTree = BUILT_PRODUCTS_DIR; };
 		96FF21B42E9539930035FF62 /* Tossinger.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tossinger.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -54,7 +64,6 @@
 		9661E1722E96CE1C0038A884 /* Exceptions for "toss" folder in "tossShare" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Models/Toss.swift,
 				Services/GenericWebsiteMetadataFetcher.swift,
 				Services/MetadataCoordinator.swift,
 				Services/ScreenshotCapturer.swift,
@@ -81,6 +90,11 @@
 			path = tossShare;
 			sourceTree = "<group>";
 		};
+		96F87C012F879E7D000C696B /* tossinger */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = tossinger;
+			sourceTree = "<group>";
+		};
 		96FF21B62E9539930035FF62 /* toss */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -94,6 +108,13 @@
 
 /* Begin PBXFrameworksBuildPhase section */
 		9661E15D2E96CCBE0038A884 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		96F87BFD2F879E7D000C696B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -126,6 +147,7 @@
 			children = (
 				96FF21B62E9539930035FF62 /* toss */,
 				9661E1612E96CCBE0038A884 /* tossShare */,
+				96F87C012F879E7D000C696B /* tossinger */,
 				96FF21B52E9539930035FF62 /* Products */,
 				96DE25D92EB39CD0001716AE /* Frameworks */,
 			);
@@ -136,6 +158,7 @@
 			children = (
 				96FF21B42E9539930035FF62 /* Tossinger.app */,
 				9661E1602E96CCBE0038A884 /* tossShare.appex */,
+				96F87C002F879E7D000C696B /* toss */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -164,6 +187,28 @@
 			productName = tossShare;
 			productReference = 9661E1602E96CCBE0038A884 /* tossShare.appex */;
 			productType = "com.apple.product-type.app-extension";
+		};
+		96F87BFF2F879E7D000C696B /* tossinger */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 96F87C062F879E7D000C696B /* Build configuration list for PBXNativeTarget "tossinger" */;
+			buildPhases = (
+				96F87BFC2F879E7D000C696B /* Sources */,
+				96F87BFD2F879E7D000C696B /* Frameworks */,
+				96F87BFE2F879E7D000C696B /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				96F87C012F879E7D000C696B /* tossinger */,
+			);
+			name = tossinger;
+			packageProductDependencies = (
+			);
+			productName = tossinger;
+			productReference = 96F87C002F879E7D000C696B /* toss */;
+			productType = "com.apple.product-type.tool";
 		};
 		96FF21B32E9539930035FF62 /* toss */ = {
 			isa = PBXNativeTarget;
@@ -204,6 +249,9 @@
 					9661E15F2E96CCBE0038A884 = {
 						CreatedOnToolsVersion = 26.0.1;
 					};
+					96F87BFF2F879E7D000C696B = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
 					96FF21B32E9539930035FF62 = {
 						CreatedOnToolsVersion = 16.1;
 					};
@@ -229,6 +277,7 @@
 			targets = (
 				96FF21B32E9539930035FF62 /* toss */,
 				9661E15F2E96CCBE0038A884 /* tossShare */,
+				96F87BFF2F879E7D000C696B /* tossinger */,
 			);
 		};
 /* End PBXProject section */
@@ -252,6 +301,13 @@
 
 /* Begin PBXSourcesBuildPhase section */
 		9661E15C2E96CCBE0038A884 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		96F87BFC2F879E7D000C696B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -341,6 +397,36 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		96F87C042F879E7D000C696B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = RFY9T5P84M;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_NAME = toss;
+				SDKROOT = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		96F87C052F879E7D000C696B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = RFY9T5P84M;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_NAME = toss;
+				SDKROOT = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -604,6 +690,15 @@
 			buildConfigurations = (
 				9661E16C2E96CCBE0038A884 /* Debug */,
 				9661E16D2E96CCBE0038A884 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		96F87C062F879E7D000C696B /* Build configuration list for PBXNativeTarget "tossinger" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96F87C042F879E7D000C696B /* Debug */,
+				96F87C052F879E7D000C696B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

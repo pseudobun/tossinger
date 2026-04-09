@@ -7,6 +7,7 @@
 
 import MarkdownUI
 import SwiftUI
+import TossKit
 
 struct TossCard: View {
   let toss: Toss

@@ -2,6 +2,7 @@
   import MarkdownUI
   import SwiftData
   import SwiftUI
+  import TossKit
 
   struct AddTossView: View {
     @Environment(\.dismiss) private var dismiss
@@ -111,6 +112,7 @@
   import MarkdownUI
   import SwiftData
   import SwiftUI
+  import TossKit
 
   struct AddTossView: View {
     @Environment(\.dismiss) private var dismiss

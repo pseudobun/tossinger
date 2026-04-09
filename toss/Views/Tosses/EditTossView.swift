@@ -9,6 +9,7 @@
   import SwiftUI
   import SwiftData
   import MarkdownUI
+  import TossKit
 
   struct EditTossView: View {
     let toss: Toss
