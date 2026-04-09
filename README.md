@@ -45,6 +45,35 @@ brew install --cask tossinger
 
 Requires macOS 15 (Sequoia) or newer.
 
+The macOS cask also installs the `toss` command-line tool on your `PATH` (symlinked from `/Applications/Tossinger.app/Contents/Helpers/toss.app/Contents/MacOS/toss`), so you can read, add, and delete tosses from the terminal:
+
+```sh
+toss list                            # most recent 50, newest first
+toss list --json                     # machine-readable output
+toss add "https://example.com"       # toss a link
+toss add "reminder: something"       # toss some text
+toss delete <uuid> --force           # delete by id
+toss --help                          # see all commands
+```
+
+## Claude Code skill
+
+Tossinger ships with a [Claude Code](https://claude.com/claude-code) agent skill that lets AI agents read, create, and delete your tosses via the `toss` CLI. Install it into your personal skills directory:
+
+```sh
+mkdir -p ~/.claude/skills/tossinger
+curl -L https://raw.githubusercontent.com/pseudobun/tossinger/main/skills/tossinger/SKILL.md \
+  -o ~/.claude/skills/tossinger/SKILL.md
+```
+
+Or, if you've cloned the repo:
+
+```sh
+cp -r skills/tossinger ~/.claude/skills/
+```
+
+After install, phrases like *"what did I save about X"*, *"toss this link"*, or *"show me my recent tosses"* will fire the skill in a fresh Claude Code session. Requires the `toss` CLI on your `PATH` (see the macOS install section above).
+
 ## How it works
 
 1. **See something interesting?** Hit share → Tossinger
