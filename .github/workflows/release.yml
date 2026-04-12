@@ -434,27 +434,31 @@ jobs:
       - name: Archive iOS
         shell: bash
         run: |
+          # Manual signing only — no -allowProvisioningUpdates and no auth key.
+          # The Apple Distribution cert is already imported into the keychain
+          # and the AppStore provisioning profiles are installed under
+          # ~/Library/MobileDevice/Provisioning Profiles. The project's iOS
+          # Release configs pin CODE_SIGN_STYLE=Manual + the profile names,
+          # so xcodebuild resolves everything locally and never calls Apple.
+          # Previously this step ran with -allowProvisioningUpdates, which
+          # caused Xcode to mint a fresh Apple Development cert every CI run
+          # and quickly fill the team's cert quota.
           xcodebuild archive \
             -scheme toss \
             -configuration Release \
             -destination 'generic/platform=iOS' \
-            -archivePath build/Tossinger.xcarchive \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "${ASC_KEY_PATH}" \
-            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
-            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"
+            -archivePath build/Tossinger.xcarchive
 
       - name: Export IPA
         shell: bash
         run: |
+          # Same reasoning as the archive step: manual signing, no API calls.
+          # The export options plist already declares signingStyle=manual and
+          # maps each bundle id to its profile.
           xcodebuild -exportArchive \
             -archivePath build/Tossinger.xcarchive \
             -exportOptionsPlist export-options/ios-export-options.plist \
-            -exportPath build/ipa \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "${ASC_KEY_PATH}" \
-            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
-            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"
+            -exportPath build/ipa
 
       - name: Upload to TestFlight
         shell: bash
