@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.1](https://github.com/pseudobun/tossinger/compare/v1.3.0...v1.3.1) (2026-04-12)
+
+
+### Bug Fixes
+
+* **ci:** pin iOS Release to manual signing, stop minting dev certs ([#16](https://github.com/pseudobun/tossinger/issues/16)) ([cd4df60](https://github.com/pseudobun/tossinger/commit/cd4df60deb48af5aaf9df4d6f3918b8d5b33ddbe))
+* **macos:** restore CloudKit pull sync and stop CLI SIGABRT on exit ([#17](https://github.com/pseudobun/tossinger/issues/17)) ([2e447ef](https://github.com/pseudobun/tossinger/commit/2e447ef47bac1ea1f4199c2210bc4f9eace18a8f))
+
 ## [1.3.0](https://github.com/pseudobun/tossinger/compare/v1.2.0...v1.3.0) (2026-04-09)
 
 
