@@ -171,15 +171,25 @@ jobs:
           cp toss/toss.entitlements "${SANITIZED}"
 
           # CloudKit silent push delivery on macOS goes over APNs, so the
-          # signed entitlements MUST declare aps-environment for the released
-          # build to receive remote-change notifications and pull tosses from
-          # iCloud into the local store. The source file carries "development"
-          # for local Debug builds (APNs sandbox), but the Developer ID
-          # provisioning profile only authorizes "production" — substitute the
-          # value here so signing succeeds and runtime sync actually works.
-          # Stripping these (the previous behavior) silently broke cross-device
-          # sync: each Mac became a write-only island.
-          /usr/libexec/PlistBuddy -c "Set :aps-environment production" "${SANITIZED}"
+          # signed entitlements must declare the APNs entitlement for the
+          # released build to receive remote-change notifications and pull
+          # tosses from iCloud into the local store.
+          #
+          # On macOS the runtime key is `com.apple.developer.aps-environment`
+          # (all developer entitlements live under the com.apple.developer.*
+          # namespace). The bare `aps-environment` key is the iOS convention
+          # and is NOT authorized by the macOS Developer ID provisioning
+          # profile — if you leave it in, amfi kills the binary at exec with
+          # "Code Signature Invalid" because a restricted entitlement isn't
+          # profile-backed. codesign --verify doesn't catch this since it
+          # only checks structural validity; amfi is the one that enforces
+          # the profile subset at runtime.
+          #
+          # The source file declares both keys with value "development" for
+          # local Debug builds (iOS/macOS multiplatform target). Here we
+          # strip the iOS-shaped bare key and substitute the macOS key to
+          # "production" since the Developer ID profile authorizes that.
+          /usr/libexec/PlistBuddy -c "Delete :aps-environment" "${SANITIZED}" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Set :com.apple.developer.aps-environment production" "${SANITIZED}"
 
           # Substitute $(CFBundleIdentifier) which xcodebuild expands at build
