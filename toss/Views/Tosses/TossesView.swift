@@ -18,22 +18,15 @@ import TossKit
 struct TossesView: View {
   @Query(sort: \Toss.createdAt, order: .reverse) private var tosses: [Toss]
   @Environment(\.modelContext) private var modelContext
+  @EnvironmentObject private var appSettings: AppSettings
+  @EnvironmentObject private var cloudSyncMonitor: CloudSyncMonitor
 
   @StateObject private var viewModel = TossesViewModel()
-  @EnvironmentObject private var cloudSyncMonitor: CloudSyncMonitor
   @State private var showingAddToss = false
   @State private var editingToss: Toss?
   @State private var selectedToss: Toss?
   @State private var isAddingToss = false
   @State private var searchText = ""
-
-  private var columns: [GridItem] {
-    #if os(macOS)
-      [GridItem(.adaptive(minimum: 220, maximum: 330), spacing: spacing)]
-    #else
-      [GridItem(.flexible(), spacing: spacing), GridItem(.flexible(), spacing: spacing)]
-    #endif
-  }
 
   private var filteredTosses: [Toss] {
     viewModel.filteredTosses(from: tosses)
@@ -41,42 +34,15 @@ struct TossesView: View {
 
   var body: some View {
     NavigationStack {
-      ScrollView(showsIndicators: false) {
-        LazyVGrid(columns: columns, spacing: spacing) {
-          #if os(macOS)
-            AddTossCard(isEditing: $isAddingToss)
-          #endif
-
-          ForEach(filteredTosses) { toss in
-            TossCard(toss: toss)
-              .contextMenu {
-                Button {
-                  copyToClipboard(toss.content)
-                } label: {
-                  Label("Copy", systemImage: "doc.on.doc")
-                }
-
-                Button(role: .destructive) {
-                  deleteToss(toss)
-                } label: {
-                  Label("Delete", systemImage: "trash")
-                }
-              }
-              .onTapGesture {
-                handleTossTap(toss)
-              }
-          }
-        }
-        .padding()
-      }
-      .scrollIndicators(.hidden, axes: [.vertical, .horizontal])
-      #if os(iOS)
-        .background(Color(UIColor.systemBackground))
-        .navigationBarTitleDisplayMode(.inline)
-      #else
-        .background(.background)
-      #endif
-      .navigationTitle("Tosses")
+      content
+        .scrollIndicators(.hidden, axes: [.vertical, .horizontal])
+        #if os(iOS)
+          .background(Color(UIColor.systemBackground))
+          .navigationBarTitleDisplayMode(.inline)
+        #else
+          .background(.background)
+        #endif
+        .navigationTitle("Tosses")
       .searchable(text: $searchText, prompt: "Search tosses...")
       .onAppear {
         viewModel.scheduleSearchDebounce(searchText)
@@ -95,6 +61,20 @@ struct TossesView: View {
             ToolbarItem(placement: .principal) {
               CloudSyncIndicator(state: cloudSyncMonitor.state)
             }
+          }
+          ToolbarItem(placement: .primaryAction) {
+            Picker(
+              "Layout",
+              selection: Binding(
+                get: { appSettings.layoutMode },
+                set: { appSettings.layoutMode = $0 }
+              )
+            ) {
+              Label("Grid", systemImage: "square.grid.2x2").tag(TossLayoutMode.grid)
+              Label("Table", systemImage: "tablecells").tag(TossLayoutMode.table)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
           }
           ToolbarItem(placement: .primaryAction) {
             Button {
@@ -156,6 +136,43 @@ struct TossesView: View {
     }
   }
 
+  @ViewBuilder
+  private var content: some View {
+    #if os(macOS)
+      switch appSettings.layoutMode {
+      case .grid:
+        ScrollView(showsIndicators: false) {
+          TossGridView(
+            tosses: filteredTosses,
+            onTap: handleTossTap,
+            onCopy: { copyToClipboard($0.content) },
+            onDelete: deleteToss,
+            isAddingToss: $isAddingToss
+          )
+        }
+      case .table:
+        TossTableView(
+          tosses: filteredTosses,
+          onActivate: { toss in
+            selectedToss = toss
+            isAddingToss = false
+          },
+          onCopy: { copyToClipboard($0.content) },
+          onDelete: deleteToss
+        )
+      }
+    #else
+      ScrollView(showsIndicators: false) {
+        TossGridView(
+          tosses: filteredTosses,
+          onTap: handleTossTap,
+          onCopy: { copyToClipboard($0.content) },
+          onDelete: deleteToss
+        )
+      }
+    #endif
+  }
+
   private func deleteToss(_ toss: Toss) {
     withAnimation {
       modelContext.delete(toss)
@@ -194,14 +211,6 @@ struct TossesView: View {
         editingToss = toss
       #endif
     }
-  }
-
-  private var spacing: CGFloat {
-    #if os(macOS)
-      20
-    #else
-      16
-    #endif
   }
 }
 
