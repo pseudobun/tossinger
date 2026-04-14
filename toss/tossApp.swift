@@ -14,6 +14,7 @@ struct tossApp: App {
   var container: ModelContainer
   @StateObject private var appSettings = AppSettings()
   @StateObject private var updateGate = UpdateGateService()
+  @StateObject private var cloudSyncMonitor = CloudSyncMonitor()
   #if os(macOS)
     @StateObject private var macGlobalShortcutController = MacGlobalShortcutController()
   #endif
@@ -40,8 +41,10 @@ struct tossApp: App {
       }
         .environmentObject(appSettings)
         .environmentObject(updateGate)
+        .environmentObject(cloudSyncMonitor)
         .tint(Color.accentColor)  // Apply accent color globally
         .onAppear {
+          cloudSyncMonitor.start()
           uuidMigration.startIfNeeded(modelContainer: container)
           backfillMigration.startIfNeeded(modelContainer: container)
           #if os(macOS)
