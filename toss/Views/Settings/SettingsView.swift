@@ -271,6 +271,7 @@ struct SettingsView: View {
       NavigationStack {
         Form {
           securitySection
+          sharingSection
           aboutSection
 
           Section {
@@ -422,6 +423,35 @@ struct SettingsView: View {
       Text("About")
     }
   }
+
+  #if os(iOS)
+    private var sharingSection: some View {
+      Section {
+        Toggle(isOn: $appSettings.autoOpenAfterSharing) {
+          HStack(spacing: 12) {
+            Image(systemName: "square.and.arrow.up")
+              .foregroundStyle(.blue)
+              .font(.title3)
+              .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 2) {
+              Text("Auto-open app after sharing")
+                .font(.body)
+              Text("Ensures tosses sync to iCloud immediately")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+          }
+        }
+      } header: {
+        Text("Sharing")
+      } footer: {
+        Text(
+          "When off, tosses shared from other apps are saved locally and only reach iCloud the next time you open Tossinger. Turn on to briefly open Tossinger after each share so changes sync immediately."
+        )
+      }
+    }
+  #endif
 }
 
 #Preview {
