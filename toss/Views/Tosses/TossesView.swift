@@ -20,6 +20,7 @@ struct TossesView: View {
   @Environment(\.modelContext) private var modelContext
 
   @StateObject private var viewModel = TossesViewModel()
+  @EnvironmentObject private var cloudSyncMonitor: CloudSyncMonitor
   @State private var showingAddToss = false
   @State private var editingToss: Toss?
   @State private var selectedToss: Toss?
@@ -85,6 +86,16 @@ struct TossesView: View {
       }
       .toolbar {
         #if os(macOS)
+          if #available(macOS 26.0, *) {
+            ToolbarItem(placement: .principal) {
+              CloudSyncIndicator(state: cloudSyncMonitor.state)
+            }
+            .sharedBackgroundVisibility(.hidden)
+          } else {
+            ToolbarItem(placement: .principal) {
+              CloudSyncIndicator(state: cloudSyncMonitor.state)
+            }
+          }
           ToolbarItem(placement: .primaryAction) {
             Button {
               showingAddToss = true
@@ -93,6 +104,16 @@ struct TossesView: View {
             }
           }
         #else
+          if #available(iOS 26.0, *) {
+            ToolbarItem(placement: .topBarLeading) {
+              CloudSyncIndicator(state: cloudSyncMonitor.state)
+            }
+            .sharedBackgroundVisibility(.hidden)
+          } else {
+            ToolbarItem(placement: .topBarLeading) {
+              CloudSyncIndicator(state: cloudSyncMonitor.state)
+            }
+          }
           ToolbarItem(placement: .topBarTrailing) {
             Button {
               showingAddToss = true
@@ -181,5 +202,29 @@ struct TossesView: View {
     #else
       16
     #endif
+  }
+}
+
+private struct CloudSyncIndicator: View {
+  let state: CloudSyncMonitor.State
+
+  var body: some View {
+    ZStack {
+      switch state {
+      case .idle:
+        Color.clear
+      case .syncing:
+        ProgressView()
+          .controlSize(.small)
+          .accessibilityLabel("Syncing with iCloud")
+      case .failed(let message):
+        Image(systemName: "exclamationmark.icloud")
+          .foregroundStyle(.orange)
+          .help(message)
+          .accessibilityLabel("iCloud sync failed")
+          .accessibilityHint(message)
+      }
+    }
+    .frame(width: 18, height: 18)
   }
 }
