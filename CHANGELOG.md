@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.4.0](https://github.com/pseudobun/tossinger/compare/v1.3.2...v1.4.0) (2026-04-14)
+
+
+### Features
+
+* **sync:** CloudKit sync status indicator + crisper card hover ([#21](https://github.com/pseudobun/tossinger/issues/21)) ([772cadd](https://github.com/pseudobun/tossinger/commit/772cadd6b71a7b29a5505b8d875b1410eed82adb))
+* **ui:** grid/table layout toggle for tosses list ([#23](https://github.com/pseudobun/tossinger/issues/23)) ([f485365](https://github.com/pseudobun/tossinger/commit/f485365a7f70664bcd7b7677be7a070057ef1943))
+
+
+### Bug Fixes
+
+* **share:** close CloudKit sync gap from iOS share extension ([#24](https://github.com/pseudobun/tossinger/issues/24)) ([8dfeb7f](https://github.com/pseudobun/tossinger/commit/8dfeb7f4b916b545f6259d8e5b43ce793806f3f7))
+
 ## [1.3.2](https://github.com/pseudobun/tossinger/compare/v1.3.1...v1.3.2) (2026-04-12)
 
 
