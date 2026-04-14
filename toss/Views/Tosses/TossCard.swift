@@ -27,13 +27,24 @@ struct TossCard: View {
     #if os(macOS)
       .onHover { hovering in
         isHovered = hovering
+        if hovering {
+          NSCursor.pointingHand.push()
+        } else {
+          NSCursor.pop()
+        }
       }
       .shadow(
-        color: .black.opacity(isHovered ? 0.08 : 0.03),
-        radius: isHovered ? 4 : 2,
-        y: 1
+        color: .black.opacity(isHovered ? 0.12 : 0.03),
+        radius: isHovered ? 6 : 2,
+        y: isHovered ? 2 : 1
       )
-      .scaleEffect(isHovered ? 1.005 : 1.0)
+      .overlay {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+          .strokeBorder(
+            Color.accentColor.opacity(isHovered ? 0.35 : 0),
+            lineWidth: 1.5
+          )
+      }
     #endif
   }
 
