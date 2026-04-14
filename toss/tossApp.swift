@@ -74,6 +74,13 @@ struct tossApp: App {
             break
           }
         }
+        #if os(iOS)
+          .onOpenURL { _ in
+            // Intentional no-op. The share extension opens `tossinger://share-complete`
+            // purely to foreground Tossinger so NSPersistentCloudKitContainer can
+            // complete its pending CloudKit export. The URL itself carries no data.
+          }
+        #endif
     }
     .modelContainer(container)
     #if os(macOS)

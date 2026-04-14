@@ -2,6 +2,19 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>lutra-labs.toss</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>tossinger</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSAccessibilityUsageDescription</key>
 	<string>Tossinger needs Accessibility access to capture selected text from other apps when you use the global shortcut (experimental).</string>
 	<key>UIBackgroundModes</key>

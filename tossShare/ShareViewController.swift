@@ -30,6 +30,26 @@ final class ShareViewController: UIViewController {
   private let successLabel = UILabel()
   private var didCompleteRequest = false
 
+  /// User-opt-in flag read from the app-group UserDefaults, written by the
+  /// main app's Settings screen. When true, the extension foregrounds the
+  /// main Tossinger app after saving so NSPersistentCloudKitContainer can
+  /// complete its pending CloudKit export (extensions cannot finish the
+  /// export themselves from a short-lived process).
+  private let autoOpenAfterSharing: Bool = {
+    UserDefaults(suiteName: TossPersistenceStack.appGroupIdentifier)?
+      .bool(forKey: "auto_open_after_share") ?? false
+  }()
+
+  private var successMessage: String {
+    autoOpenAfterSharing
+      ? "Tossed. Opening app…"
+      : "Tossed. Open app to sync."
+  }
+
+  private var successCloseDelay: TimeInterval {
+    autoOpenAfterSharing ? 0.35 : 0.8
+  }
+
   override func viewDidLoad() {
     super.viewDidLoad()
     setupUI()
@@ -44,7 +64,7 @@ final class ShareViewController: UIViewController {
     view.backgroundColor = .systemBackground
 
     // Configure success label
-    successLabel.text = "Tossed and syncing..."
+    successLabel.text = successMessage
     successLabel.font = .systemFont(ofSize: 17, weight: .medium)
     successLabel.textAlignment = .center
     successLabel.textColor = .label
@@ -167,7 +187,7 @@ final class ShareViewController: UIViewController {
 
     do {
       try context.save()
-      showMessage("Tossed and syncing...")
+      showMessage(successMessage)
     } catch {
       showMessageAndClose("Failed to save toss.")
       return
@@ -189,7 +209,7 @@ final class ShareViewController: UIViewController {
       // Keep the initial save; metadata enrichment is best-effort.
     }
 
-    closeExtension(after: 0.35)
+    finishAfterSuccess()
   }
 
   private func applyMetadata(_ result: MetadataResult, to toss: Toss) {
@@ -262,7 +282,21 @@ final class ShareViewController: UIViewController {
   }
 
   private func showSuccessAndClose() {
-    showMessageAndClose("Tossed and syncing...")
+    showMessage(successMessage)
+    finishAfterSuccess()
+  }
+
+  /// Close path for a successful save. If the user opted into auto-open, the
+  /// extension foregrounds the containing app via its custom URL scheme so
+  /// NSPersistentCloudKitContainer can complete its CloudKit export. The
+  /// extension always tears itself down afterwards — `completeRequest` is
+  /// called unconditionally via `closeExtension(after:)` so the extension
+  /// exits even if `open` was denied by the system.
+  private func finishAfterSuccess() {
+    if autoOpenAfterSharing, let url = URL(string: "tossinger://share-complete") {
+      extensionContext?.open(url, completionHandler: nil)
+    }
+    closeExtension(after: successCloseDelay)
   }
 
   private func closeExtension(after delay: TimeInterval = 0) {
