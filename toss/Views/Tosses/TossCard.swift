@@ -118,6 +118,8 @@ struct TossCard: View {
       return Color(red: 0.90, green: 0.0, blue: 0.0)
     case .xProfile, .xPost:
       return Color(red: 0.0, green: 0.0, blue: 0.0)
+    case .googleMaps:
+      return Color(red: 0.16, green: 0.43, blue: 0.27)
     case .genericWebsite, nil:
       return Color(red: 0.20, green: 0.22, blue: 0.25)
     }
@@ -207,7 +209,7 @@ private struct LinkCardBody: View, Equatable {
         }
       }
 
-    case .youtube, .github, .genericWebsite, nil:
+    case .youtube, .github, .googleMaps, .genericWebsite, nil:
       Group {
         if FeatureFlags.useThumbnailPipeline {
           TossCardThumbnailView(toss: toss)
@@ -367,6 +369,12 @@ private struct PlatformBadgeView: View, Equatable {
             .aspectRatio(contentMode: .fit)
             .frame(width: 10, height: 10)
         ), title: formattedXUsername)
+
+      case .googleMaps:
+        LabelView(icon: AnyView(
+          Image(systemName: "mappin.and.ellipse")
+            .font(.caption)
+        ), title: metadataTitle ?? "Map")
 
       case .genericWebsite, nil:
         LabelView(icon: AnyView(

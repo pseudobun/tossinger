@@ -107,7 +107,28 @@ class MetadataCoordinator {
     if host.contains("github.com") {
       return .github
     }
+    if isGoogleMapsURL(host: host, path: url.path) {
+      return .googleMaps
+    }
     return .genericWebsite
+  }
+
+  private static func isGoogleMapsURL(host: String, path: String) -> Bool {
+    if host == "maps.app.goo.gl" {
+      return true
+    }
+    if host == "goo.gl" && path.hasPrefix("/maps/") {
+      return true
+    }
+    if host == "plus.codes" {
+      return true
+    }
+    if (host == "google.com" || host == "www.google.com" || host == "maps.google.com")
+      && path.hasPrefix("/maps")
+    {
+      return true
+    }
+    return false
   }
 
   fileprivate static var useMetadataTimeoutPolicy: Bool {
@@ -231,6 +252,9 @@ private actor DefaultMetadataService: MetadataFetching {
         timeout: timeout
       )
 
+    case .googleMaps:
+      return await fetchGoogleMapsMetadata(url: url, timeout: timeout)
+
     case .genericWebsite:
       return await fetchGenericMetadataWithScreenshot(
         url: url,
@@ -238,6 +262,28 @@ private actor DefaultMetadataService: MetadataFetching {
         timeout: timeout
       )
     }
+  }
+
+  // MARK: - Google Maps Metadata Fetching
+
+  private func fetchGoogleMapsMetadata(
+    url: URL,
+    timeout: TimeInterval
+  ) async -> MetadataResult {
+    let metadata = await networkSemaphore.withPermit {
+      await GoogleMapsMetadataFetcher.fetchMetadata(url: url, timeout: timeout)
+    }
+
+    let fetchState: MetadataFetchState = metadata.didSucceed ? .success : .failed
+    return MetadataResult(
+      imageData: metadata.imageData,
+      title: metadata.title,
+      description: metadata.description,
+      author: nil,
+      platformType: .googleMaps,
+      fetchState: fetchState,
+      fetchedAt: Date()
+    )
   }
 
   // MARK: - YouTube Metadata Fetching

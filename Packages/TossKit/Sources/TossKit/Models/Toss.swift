@@ -18,6 +18,7 @@ public enum PlatformType: String, Codable, Sendable {
   case xProfile
   case xPost
   case github
+  case googleMaps
   case genericWebsite
 }
 

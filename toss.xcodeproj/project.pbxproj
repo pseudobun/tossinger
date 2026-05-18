@@ -88,6 +88,10 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Services/GenericWebsiteMetadataFetcher.swift,
+				Services/GoogleMapsMetadataFetcher.swift,
+				Services/GoogleMapsShortLinkResolver.swift,
+				Services/GoogleMapsThumbnailRenderer.swift,
+				Services/GoogleMapsURLParser.swift,
 				Services/MetadataCoordinator.swift,
 				Services/ScreenshotCapturer.swift,
 				Services/TwitterMetadataFetcher.swift,

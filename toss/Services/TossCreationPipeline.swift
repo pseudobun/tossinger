@@ -176,7 +176,9 @@ enum TossCreationPipeline {
   static func retryPendingMetadata(modelContainer: ModelContainer) async {
     let context = ModelContext(modelContainer)
     let descriptor = FetchDescriptor<Toss>(
-      predicate: #Predicate<Toss> { $0.metadataFetchStateRawValue == "pending" && $0.typeRawValue == "link" },
+      predicate: #Predicate<Toss> {
+        $0.typeRawValue == "link" && $0.metadataFetchStateRawValue != "success"
+      },
       sortBy: [SortDescriptor(\Toss.createdAt, order: .reverse)]
     )
 
