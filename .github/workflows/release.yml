@@ -356,7 +356,7 @@ jobs:
             desc "Save links and selected text for later"
             homepage "https://github.com/pseudobun/tossinger"
 
-            depends_on macos: ">= :sequoia"
+            depends_on macos: :sequoia
 
             app "Tossinger.app"
 
